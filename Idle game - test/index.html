@@ -1,0 +1,4650 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tech Idle Game</title>
+
+  <style>
+    :root {
+      --bg: #151515;
+      --panel: #222;
+      --panel-dark: #181818;
+      --border: #555;
+      --border-soft: #3a3a3a;
+      --text: #f2f2f2;
+      --muted: #aaa;
+      --money: #7CFF7C;
+      --chips: #66ccff;
+      --gold: #ffdd66;
+      --danger: #aa3333;
+      --success: #33aa55;
+      --maxed: #3399ff;
+      --gigachip: #ff4a4a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    .game-layout,
+    .panel,
+    .main-menu-overlay,
+    .pause-menu-overlay,
+    .skilltree-overlay,
+    .tooltip,
+    .item-card,
+    .card-button,
+    .work-area,
+    .work-display-slot,
+    .stats,
+    .settings-page-content,
+    .tree-viewport,
+    .tree-node {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    img,
+    button {
+      -webkit-user-drag: none;
+    }
+
+
+    body {
+      margin: 0;
+      font-family: "Courier New", monospace;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(102,204,255,0.10), transparent 32%),
+        radial-gradient(circle at 12% 55%, rgba(124,255,124,0.05), transparent 30%),
+        radial-gradient(circle at 88% 55%, rgba(102,204,255,0.06), transparent 34%),
+        linear-gradient(180deg, #111820 0%, #090d13 48%, #05070b 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(102,204,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(102,204,255,0.035) 1px, transparent 1px);
+      background-size: 46px 46px;
+      opacity: 0.38;
+      mask-image: radial-gradient(circle at center, black 0%, transparent 78%);
+      z-index: 0;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at center, transparent 0%, transparent 55%, rgba(0,0,0,0.55) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.035), transparent 12%, transparent 88%, rgba(255,255,255,0.025));
+      z-index: 0;
+    }
+
+    .game-layout {
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 390px minmax(560px, 1fr) 450px;
+      gap: 0;
+      align-items: stretch;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,0.32), transparent 22%, transparent 78%, rgba(0,0,0,0.32)),
+        radial-gradient(circle at 50% 45%, rgba(102,204,255,0.06), transparent 46%);
+    }
+
+    .game-layout::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(102,204,255,0.10) 25.7%, transparent 26.1%, transparent 73.9%, rgba(102,204,255,0.10) 74.3%, transparent 100%);
+      opacity: 0.7;
+      z-index: 1;
+    }
+
+    .panel {
+      position: relative;
+      z-index: 2;
+      background:
+        linear-gradient(180deg, rgba(30, 39, 50, 0.62) 0%, rgba(11, 16, 24, 0.72) 100%);
+      border: none;
+      border-radius: 0;
+      padding: 22px;
+      box-shadow:
+        inset 0 0 45px rgba(0,0,0,0.55),
+        inset 0 0 0 1px rgba(102,204,255,0.08);
+      text-align: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .panel:nth-child(1) {
+      border-right: 1px solid rgba(102,204,255,0.20);
+      box-shadow:
+        inset -28px 0 55px rgba(0,0,0,0.42),
+        inset 0 0 0 1px rgba(102,204,255,0.08);
+    }
+
+    .panel:nth-child(2) {
+      background:
+        radial-gradient(circle at 50% 32%, rgba(102,204,255,0.09), transparent 34%),
+        linear-gradient(180deg, rgba(19, 27, 38, 0.50), rgba(6, 9, 14, 0.62));
+      box-shadow:
+        inset 0 0 70px rgba(0,0,0,0.50),
+        0 0 50px rgba(102,204,255,0.05);
+    }
+
+    .panel:nth-child(3) {
+      border-left: 1px solid rgba(102,204,255,0.20);
+      box-shadow:
+        inset 28px 0 55px rgba(0,0,0,0.42),
+        inset 0 0 0 1px rgba(102,204,255,0.08);
+    }
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      max-height: 100vh;
+      height: 100vh;
+    }
+
+    .shop-panel {
+      overflow: visible;
+      z-index: 60;
+    }
+
+    .shop-edge-switcher {
+      position: absolute;
+      top: 34px;
+      left: calc(100% + 1px);
+      right: auto;
+      transform: none;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .shop-edge-button {
+      width: 48px;
+      height: 56px;
+      min-height: 56px;
+      padding: 0;
+      margin: 0;
+      border-radius: 0 12px 12px 0;
+      background:
+        linear-gradient(90deg, rgba(14, 24, 36, 0.99) 0%, rgba(18, 35, 50, 0.99) 45%, rgba(24, 47, 64, 0.99) 100%),
+        linear-gradient(180deg, #2e5f7a, #183346);
+      border: 2px solid rgba(102,204,255,0.55);
+      border-left: 0;
+      color: #eaf7ff;
+      font-size: 24px;
+      box-shadow:
+        inset -2px 0 0 rgba(0,0,0,0.42),
+        4px 0 0 rgba(5,8,12,0.85),
+        0 0 18px rgba(102,204,255,0.12);
+      overflow: hidden;
+    }
+
+    .shop-edge-button:hover:not(:disabled) {
+      border-color: #9ee8ff;
+      border-left: 0;
+      filter: brightness(1.16);
+      box-shadow:
+        inset -2px 0 0 rgba(0,0,0,0.42),
+        4px 0 0 #05080c,
+        0 0 22px rgba(102,204,255,0.24);
+    }
+
+    .shop-edge-button .edge-button-img {
+      display: none;
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+
+    .shop-edge-button .edge-button-placeholder {
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .shop-tab-content.hidden {
+      display: none;
+    }
+
+    .foundation-placeholder-card {
+      margin-top: 14px;
+      padding: 22px 18px;
+      background:
+        linear-gradient(180deg, rgba(20, 28, 38, 0.78), rgba(7, 11, 17, 0.82));
+      border: 1px solid rgba(102,204,255,0.22);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,0.55),
+        0 8px 18px rgba(0,0,0,0.18);
+      color: #cdd8e8;
+      line-height: 1.5;
+    }
+
+    .foundation-placeholder-icon {
+      width: 82px;
+      height: 82px;
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at center, rgba(102,204,255,0.13), transparent 55%),
+        linear-gradient(180deg, #08111a, #030507);
+      border: 1px solid rgba(102,204,255,0.25);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.72),
+        0 0 14px rgba(102,204,255,0.08);
+      font-size: 42px;
+    }
+
+    .foundation-placeholder-card h3 {
+      color: #dff6ff;
+      margin: 0 0 12px;
+      text-align: center;
+    }
+
+    .foundation-placeholder-card p {
+      margin: 0;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .panel-title-fixed {
+      flex: 0 0 auto;
+      margin-bottom: 12px;
+    }
+
+    .scroll-panel {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      padding-right: 10px;
+      margin-right: -10px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(102,204,255,0.65) rgba(0,0,0,0.25);
+      mask-image: linear-gradient(180deg, transparent 0, black 16px, black calc(100% - 18px), transparent 100%);
+    }
+
+    .scroll-panel::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .scroll-panel::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid #222;
+      border-radius: 999px;
+    }
+
+    .scroll-panel::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(102,204,255,0.95), rgba(47,95,122,0.95));
+      border: 2px solid rgba(0,0,0,0.55);
+      border-radius: 999px;
+      box-shadow: 0 0 10px rgba(102,204,255,0.22);
+    }
+
+    .scroll-panel::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(158,232,255,1), rgba(63,125,160,1));
+    }
+
+    .scroll-fade-bottom {
+      position: sticky;
+      bottom: 0;
+      height: 24px;
+      margin-top: -24px;
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(29,29,29,0.95));
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 14px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(102,204,255,0.20), transparent);
+      pointer-events: none;
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 14px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(124,255,124,0.10), transparent);
+      pointer-events: none;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      letter-spacing: 1px;
+      text-shadow:
+        2px 2px 0 #000,
+        0 0 14px rgba(102,204,255,0.22);
+    }
+
+    h2.panel-title-fixed,
+    .panel h2 {
+      color: #dff6ff;
+      border-bottom: 1px solid rgba(102,204,255,0.25);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    #upgradesTab h2,
+    #researchTab h2 {
+      margin-top: 8px;
+      margin-bottom: 20px;
+      padding-top: 8px;
+    }
+
+    .test-switch-area {
+      width: min(360px, 100%);
+      margin: 0 auto 14px;
+      padding: 9px 12px;
+      background: rgba(5, 10, 16, 0.68);
+      border: 1px solid rgba(102,204,255,0.24);
+      border-radius: 999px;
+      box-shadow:
+        inset 0 0 16px rgba(0,0,0,0.45),
+        0 0 14px rgba(102,204,255,0.08);
+      color: #cdd8e8;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .test-switch-area input {
+      width: 42px;
+      height: 20px;
+      accent-color: var(--chips);
+      cursor: pointer;
+    }
+
+    .stats-frame {
+      margin-top: 16px;
+      padding: 10px;
+      background:
+        linear-gradient(180deg, rgba(12, 20, 30, 0.92), rgba(5, 8, 13, 0.96));
+      border: 1px solid rgba(102,204,255,0.28);
+      border-radius: 18px;
+      box-shadow:
+        inset 0 0 28px rgba(0,0,0,0.45),
+        0 0 0 2px rgba(0,0,0,0.38),
+        0 0 22px rgba(102,204,255,0.08);
+      position: relative;
+    }
+
+    .stats-frame::before {
+      display: none;
+    }
+
+    .money {
+      font-size: 36px;
+      margin: 18px 0;
+      color: var(--money);
+      text-shadow: 0 0 10px rgba(124,255,124,0.35);
+    }
+
+    .chips {
+      color: var(--chips);
+      font-size: 20px;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(102,204,255,0.25);
+    }
+
+    .gigachips {
+      color: var(--gigachip);
+      font-size: 18px;
+      margin-bottom: 12px;
+      text-shadow:
+        0 0 10px rgba(255,74,74,0.38),
+        2px 2px 0 #000;
+      letter-spacing: 0.5px;
+    }
+
+    .gigachip-flash {
+      color: var(--gigachip);
+      text-shadow:
+        0 0 12px rgba(255,74,74,0.75),
+        0 0 24px rgba(255,74,74,0.35);
+    }
+
+    .work-area {
+      width: 92%;
+      margin: 22px auto 12px;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid rgba(102,204,255,0.30);
+      padding: 16px;
+      min-height: 420px;
+      background:
+        radial-gradient(circle at top, rgba(110, 155, 255, 0.12), transparent 45%),
+        linear-gradient(180deg, #171b24 0%, #11151d 40%, #0b0e14 100%);
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.72),
+        inset 0 0 60px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(102,204,255,0.18),
+        0 0 36px rgba(56,108,219,0.16);
+      border-radius: 22px;
+      transition: transform 0.08s, background 0.12s, border-color 0.12s, box-shadow 0.12s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .work-area:hover {
+      background:
+        radial-gradient(circle at top, rgba(125, 170, 255, 0.16), transparent 48%),
+        linear-gradient(180deg, #1a1f2a 0%, #131925 40%, #0c1018 100%);
+      border-color: #7b8da8;
+      box-shadow: inset 0 0 0 3px #111, 0 8px 0 #0a0a0a, 0 0 28px rgba(76, 130, 255, 0.12);
+    }
+
+    .work-area:active {
+      transform: scale(0.985) translateY(3px);
+      box-shadow: inset 0 0 0 3px #111, 0 3px 0 #0a0a0a, 0 0 18px rgba(76, 130, 255, 0.08);
+    }
+
+    .click-effect-layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .click-income-popup {
+      position: absolute;
+      min-width: 56px;
+      padding: 5px 9px;
+      background: rgba(4, 12, 8, 0.86);
+      border: 2px solid rgba(124,255,124,0.85);
+      border-radius: 3px;
+      color: var(--money);
+      font-weight: bold;
+      font-size: 18px;
+      line-height: 1;
+      text-align: center;
+      text-shadow:
+        2px 2px 0 #000,
+        0 0 10px rgba(124,255,124,0.55);
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,0.75),
+        0 0 14px rgba(124,255,124,0.20);
+      transform: translate(-50%, -50%);
+      animation: clickIncomeFloat 0.82s ease-out forwards;
+      will-change: transform, opacity;
+      white-space: nowrap;
+    }
+
+    @keyframes clickIncomeFloat {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -35%) scale(0.82);
+      }
+      15% {
+        opacity: 1;
+        transform: translate(-50%, -62%) scale(1.08);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -145%) scale(0.96);
+      }
+    }
+
+    .work-display-slot {
+      width: 100%;
+      height: 100%;
+      min-height: 342px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(110, 140, 190, 0.18);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      --work-bg-image: none;
+      background-image:
+        var(--work-bg-image),
+        radial-gradient(circle at 50% 48%, rgba(40, 70, 140, 0.22), transparent 35%),
+        radial-gradient(circle at 20% 18%, rgba(140, 110, 255, 0.12), transparent 28%),
+        radial-gradient(circle at 78% 22%, rgba(80, 180, 255, 0.10), transparent 24%),
+        radial-gradient(circle at 50% 100%, rgba(255,255,255,0.04), transparent 26%),
+        linear-gradient(180deg, #090d14 0%, #070a11 50%, #05070c 100%);
+      background-size: cover, auto, auto, auto, auto, auto;
+      background-position: center, center, center, center, center, center;
+      background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+      box-shadow:
+        inset 0 0 40px rgba(0,0,0,0.65),
+        inset 0 0 90px rgba(19, 35, 72, 0.22);
+      isolation: isolate;
+    }
+
+    .work-display-slot::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.85) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 22% 68%, rgba(255,255,255,0.6) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 36% 28%, rgba(255,255,255,0.55) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 48% 12%, rgba(255,255,255,0.7) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 57% 74%, rgba(255,255,255,0.52) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 70% 22%, rgba(255,255,255,0.65) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 80% 56%, rgba(255,255,255,0.48) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 90% 16%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 88% 84%, rgba(255,255,255,0.6) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 14% 88%, rgba(255,255,255,0.55) 0 1px, transparent 1.5px);
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .work-display-slot.has-work-background::before {
+      opacity: 0;
+    }
+
+    .work-display-slot.has-work-background .work-display-img,
+    .work-display-slot.has-work-background .work-display-placeholder {
+      display: none !important;
+    }
+
+    .work-display-slot::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, transparent 0%, transparent 52%, rgba(0, 0, 0, 0.28) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.05), transparent 16%, transparent 84%, rgba(255,255,255,0.02));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .work-display-img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      max-height: 330px;
+      object-fit: contain;
+      object-position: center;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 20px rgba(0,0,0,0.85));
+      pointer-events: none;
+      position: relative;
+      z-index: 1;
+      padding: 8px;
+    }
+
+    .work-display-placeholder {
+      font-size: 150px;
+      line-height: 1;
+      pointer-events: none;
+      filter: drop-shadow(0 0 16px rgba(0,0,0,0.8));
+      position: relative;
+      z-index: 1;
+    }
+
+    .work-label {
+      color: #d0d8e8;
+      font-size: 16px;
+      margin-bottom: 4px;
+      text-shadow: 0 0 8px rgba(30,60,120,0.18);
+    }
+
+    .stats {
+      color: #d2dae4;
+      font-size: 14px;
+      line-height: 1.6;
+      max-height: 145px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px 14px;
+      border-radius: 12px;
+      text-align: left;
+      background: rgba(0,0,0,0.26);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(102,204,255,0.65) rgba(0,0,0,0.25);
+    }
+
+    .stats::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .stats::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.25);
+      border-radius: 999px;
+    }
+
+    .stats::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(102,204,255,0.9), rgba(47,95,122,0.9));
+      border-radius: 999px;
+    }
+
+    .bonus-flash {
+      color: var(--gold);
+      font-size: 13px;
+      min-height: 18px;
+      margin-top: 8px;
+      text-shadow: 0 0 8px rgba(255,221,102,0.45);
+    }
+
+    button {
+      font-family: "Courier New", monospace;
+      padding: 11px 12px;
+      margin: 6px 0;
+      width: 100%;
+      background: linear-gradient(180deg, #505050, #333);
+      color: white;
+      border: 2px solid #888;
+      cursor: pointer;
+      border-radius: 9px;
+      box-shadow: 0 4px 0 #151515;
+      transition: transform 0.08s, filter 0.12s, border-color 0.12s, background 0.12s;
+    }
+
+    button:hover:not(:disabled) {
+      filter: brightness(1.15);
+      border-color: #bbb;
+      background: linear-gradient(180deg, #5c5c5c, #383838);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #151515;
+    }
+
+    button:disabled {
+      background: #222;
+      color: #777;
+      cursor: not-allowed;
+      border-color: #444;
+      box-shadow: none;
+      filter: grayscale(0.65);
+    }
+
+    .danger {
+      background: linear-gradient(180deg, #6b2c2c, #451818);
+      border-color: #aa5555;
+    }
+
+    .tooltip {
+      position: relative;
+      display: block;
+      margin-top: 12px;
+    }
+
+    .tooltip > button {
+      min-height: 48px;
+      background: linear-gradient(180deg, #303030, #202020);
+      border-color: #666;
+      text-align: center;
+      box-shadow: inset 0 0 0 2px #111, 0 5px 0 #0b0b0b;
+    }
+
+    .tooltip > button:hover:not(:disabled) {
+      border-color: var(--chips);
+      box-shadow: inset 0 0 0 2px #111, 0 5px 0 #0b0b0b, 0 0 14px rgba(102,204,255,0.18);
+    }
+
+    .panel .tooltip + div {
+      margin: 0 0 10px;
+      padding: 6px 8px;
+      color: #bdbdbd;
+      font-size: 12px;
+      background: #171717;
+      border: 1px solid #333;
+      border-radius: 7px;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      opacity: 0;
+      width: 260px;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 9px;
+      border: 2px solid #777;
+      position: absolute;
+      z-index: 100000;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -96px;
+      font-size: 12px;
+      line-height: 1.4;
+      transition: opacity 0.15s;
+      pointer-events: none;
+      box-shadow: 0 0 0 4px #000, 0 0 18px rgba(0,0,0,0.85);
+      border-radius: 8px;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 26px;
+      background: rgba(5, 8, 12, 0.68);
+      border: 1px solid rgba(102,204,255,0.20);
+      padding: 6px;
+      border-radius: 12px;
+      box-shadow: inset 0 0 18px rgba(0,0,0,0.45);
+    }
+
+    .tab-buttons button {
+      margin: 0;
+      padding: 8px;
+      font-size: 13px;
+      box-shadow: none;
+    }
+
+    .tab-buttons button.active-tab {
+      background: linear-gradient(180deg, #2f5f7a, #1f4055);
+      border-color: var(--chips);
+      box-shadow: 0 0 12px rgba(102,204,255,0.2);
+    }
+
+    .hidden { display: none; }
+
+    .research-warning {
+      color: #ff7777;
+      border: 2px solid var(--danger);
+      background: #2a1111;
+      padding: 10px;
+      margin: 12px 0;
+      font-size: 13px;
+      line-height: 1.5;
+      border-radius: 10px;
+    }
+
+    .reincarnation-info {
+      font-size: 14px;
+      color: #ccc;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      background: #171717;
+      border: 2px solid #333;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .tooltip.item-card {
+      margin-top: 14px;
+      padding: 10px;
+      background:
+        linear-gradient(180deg, rgba(20, 28, 38, 0.78), rgba(7, 11, 17, 0.82));
+      border: 1px solid rgba(102,204,255,0.18);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,0.55),
+        0 8px 18px rgba(0,0,0,0.18);
+    }
+
+    .tooltip.item-card.maxed-upgrade-card {
+      border-color: rgba(255,221,102,0.48);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,221,102,0.12),
+        0 8px 18px rgba(0,0,0,0.18),
+        0 0 14px rgba(255,221,102,0.08);
+    }
+
+    .tooltip.item-card.maxed-upgrade-card > button.card-button {
+      border-color: rgba(255,221,102,0.42);
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.72),
+        0 5px 0 #0b0b0b,
+        0 0 12px rgba(255,221,102,0.08);
+    }
+
+    .tooltip.item-card > button.card-button {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 92px;
+      padding: 12px;
+      text-align: left;
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(21, 37, 52, 0.95), rgba(18, 25, 34, 0.95));
+      border-color: rgba(102,204,255,0.26);
+    }
+
+    .asset-icon-slot {
+      flex: 0 0 76px;
+      width: 76px;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at center, rgba(102,204,255,0.12), transparent 55%),
+        linear-gradient(180deg, #08111a, #030507);
+      border: 1px solid rgba(102,204,255,0.25);
+      border-radius: 12px;
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.72),
+        0 0 14px rgba(102,204,255,0.08);
+      font-size: 36px;
+      image-rendering: pixelated;
+      overflow: hidden;
+    }
+
+    .asset-placeholder {
+      line-height: 1;
+    }
+
+    .asset-img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .card-title {
+      font-weight: bold;
+      color: #fff;
+      line-height: 1.2;
+      font-size: 15px;
+    }
+
+    .card-cost {
+      color: var(--money);
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .coming-soon-card {
+      opacity: 0.62;
+    }
+
+    .coming-soon-card .card-button {
+      cursor: not-allowed;
+    }
+
+    .coming-soon-card .asset-icon-slot {
+      border-color: #555;
+      color: #9aa8b6;
+      background:
+        radial-gradient(circle at center, rgba(102,204,255,0.10), transparent 55%),
+        linear-gradient(180deg, #111722, #07090d);
+    }
+
+    .coming-soon-card .card-title {
+      color: #b8c7d6;
+    }
+
+    .coming-soon-card .card-cost {
+      color: #8ea6bd;
+    }
+
+    .test-area,
+    .save-area {
+      margin-top: 14px;
+      border-top: 1px solid rgba(102,204,255,0.18);
+      padding-top: 10px;
+    }
+
+    .save-status {
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+
+    .autosave-info {
+      color: #8ea6bd;
+      font-size: 13px;
+    }
+
+    .settings-danger-zone {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 2px solid rgba(170, 51, 51, 0.55);
+    }
+
+    .settings-warning {
+      color: #ff8c8c;
+      background: rgba(80, 12, 12, 0.45);
+      border: 1px solid rgba(255, 110, 110, 0.45);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .settings-delete-button {
+      background: linear-gradient(180deg, #7a2b2b, #421616);
+      border-color: #ff7777;
+      color: #fff;
+    }
+
+    .settings-page-content {
+      text-align: left;
+      margin: 18px 0 22px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.34);
+      border: 2px solid rgba(102,204,255,0.32);
+      border-radius: 12px;
+      color: #cdd8e8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .settings-section {
+      padding-bottom: 14px;
+      border-bottom: 2px solid rgba(102,204,255,0.20);
+    }
+
+    .skilltree-overlay {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 35% 25%, rgba(102,204,255,0.09), transparent 30%),
+        radial-gradient(circle at 75% 75%, rgba(124,255,124,0.05), transparent 35%),
+        radial-gradient(circle at top, #111 0%, #070707 55%, #030303 100%);
+      z-index: 999;
+      display: none;
+      color: #f2f2f2;
+      overflow: hidden;
+      padding: 0;
+      flex-direction: column;
+    }
+
+    .skilltree-overlay.open {
+      display: flex;
+    }
+
+    .skilltree-header {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid #253545;
+      padding: 18px 30px;
+      margin-bottom: 0;
+      background: rgba(0,0,0,0.42);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+      z-index: 5;
+    }
+
+    .skilltree-header h1 { margin: 0; }
+
+    .close-overlay-button {
+      width: 180px;
+      background: linear-gradient(180deg, #6b2c2c, #451818);
+      border-color: #aa5555;
+    }
+
+    .tree-area {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      text-align: center;
+      position: relative;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tree-help {
+      display: none;
+    }
+
+    .tree-viewport {
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      border: none;
+      border-radius: 0;
+      background:
+        radial-gradient(circle at 40% 30%, rgba(102,204,255,0.10), transparent 30%),
+        radial-gradient(circle at 70% 70%, rgba(124,255,124,0.06), transparent 32%),
+        linear-gradient(180deg, #091018 0%, #05080d 100%);
+      box-shadow:
+        inset 0 0 85px rgba(0,0,0,0.78),
+        inset 0 0 120px rgba(25,60,100,0.14);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .tree-viewport.dragging {
+      cursor: grabbing;
+    }
+
+    .tree-canvas {
+      width: 1000px;
+      height: 900px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+    }
+
+    .tree-connections {
+      position: absolute;
+      inset: 0;
+      width: 1000px;
+      height: 900px;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .tree-connection-main,
+    .tree-connection-glow {
+      fill: none;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    .tree-connection-glow {
+      stroke: rgba(102,204,255,0.22);
+      stroke-width: 12;
+      filter: blur(2px);
+    }
+
+    .tree-connection-main {
+      stroke: rgba(102,204,255,0.85);
+      stroke-width: 4;
+      stroke-dasharray: 14 8;
+      filter: drop-shadow(0 0 6px rgba(102,204,255,0.45));
+    }
+
+    .tree-node {
+      width: 92px;
+      height: 92px;
+      background: linear-gradient(180deg, #1c222b, #0b0f16);
+      border: 3px solid var(--danger);
+      padding: 8px;
+      text-align: center;
+      box-shadow: 0 0 0 3px #050505, 0 8px 18px rgba(0,0,0,0.45);
+      position: absolute;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: border-color 0.12s, box-shadow 0.12s, filter 0.12s;
+      border-radius: 12px;
+      z-index: 2;
+    }
+
+    .tree-node:hover {
+      z-index: 99999;
+      box-shadow:
+        0 0 0 3px #050505,
+        0 0 22px rgba(102,204,255,0.35),
+        inset 0 0 18px rgba(102,204,255,0.08);
+      filter: none;
+    }
+
+    .tree-node.start { border-color: var(--danger); }
+    .tree-node.active { border-color: var(--success); color: #66ff88; }
+    .tree-node.maxed { border-color: var(--maxed); color: #66ccff; }
+
+    .tree-node.locked {
+      opacity: 1;
+      filter: grayscale(80%) brightness(0.65);
+    }
+
+    .tree-icon {
+      font-size: 40px;
+      line-height: 1;
+    }
+
+    .skill-asset-slot {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      image-rendering: pixelated;
+    }
+
+    .skill-asset-slot .asset-img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .skill-asset-slot .asset-placeholder {
+      line-height: 1;
+    }
+
+    .tree-details {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 108%;
+      transform: translateX(-50%);
+      width: 310px;
+      background: #000;
+      border: 2px solid #777;
+      padding: 12px;
+      z-index: 100000;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #fff;
+      opacity: 1;
+      pointer-events: none;
+      box-shadow: 0 0 0 4px #000, 0 0 18px #000;
+      border-radius: 8px;
+    }
+
+    .tree-node:hover .tree-details { display: block; }
+    .tree-details strong { color: var(--gold); }
+
+    .skilltree-footer {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      width: min(920px, calc(100vw - 48px));
+      margin: 0;
+      border: 2px solid rgba(102,204,255,0.28);
+      padding: 14px 18px;
+      text-align: center;
+      background: rgba(0,0,0,0.68);
+      border-radius: 14px;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.45), 0 0 20px rgba(102,204,255,0.10);
+      z-index: 6;
+      backdrop-filter: blur(2px);
+    }
+
+    .skilltree-mode-text {
+      color: #d3dce8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .start-run-button {
+      width: 240px;
+      background: linear-gradient(180deg, #2f7a3f, #1d4f29);
+      border-color: #66ff88;
+      display: none;
+      margin: 0 auto;
+    }
+
+
+    /* =========================
+       HAUPTMENÜ
+    ========================= */
+    .main-menu-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      color: var(--text);
+      background-image: url("assets/ui/main-menu-bg.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+    }
+
+
+    body.main-menu-scene {
+      padding: 0;
+      overflow: hidden;
+      display: block;
+    }
+
+    body.main-menu-scene .game-layout {
+      display: none;
+    }
+
+    body.main-menu-scene .skilltree-overlay {
+      display: none !important;
+    }
+
+    body.main-menu-scene .pause-menu-overlay {
+      display: none !important;
+    }
+
+    .main-menu-overlay.hidden {
+      display: none;
+    }
+
+    .main-menu-overlay::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at center, black 0%, transparent 78%);
+      pointer-events: none;
+    }
+
+    .main-menu-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, transparent 0%, transparent 72%, rgba(0,0,0,0.18) 100%);
+      pointer-events: none;
+    }
+
+    .main-menu-box {
+      position: relative;
+      z-index: 1;
+      width: min(92vw, 620px);
+      padding: 34px;
+      background: linear-gradient(180deg, rgba(22, 28, 38, 0.78), rgba(8, 12, 20, 0.84));
+      border: 3px solid rgba(102, 204, 255, 0.55);
+      border-radius: 18px;
+      box-shadow:
+        0 0 0 4px rgba(0,0,0,0.75),
+        0 0 34px rgba(102,204,255,0.18),
+        inset 0 0 40px rgba(0,0,0,0.55);
+      text-align: center;
+    }
+
+    .main-menu-title {
+      margin: 0 0 28px;
+      font-size: 56px;
+      letter-spacing: 3px;
+      color: #eaf7ff;
+      text-shadow:
+        3px 3px 0 #000,
+        0 0 18px rgba(102,204,255,0.38);
+    }
+
+    .main-menu-subtitle {
+      margin: 10px 0 28px;
+      color: #9fdfff;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .main-menu-buttons {
+      display: grid;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .language-switcher {
+      position: absolute;
+      top: 22px;
+      right: 22px;
+      z-index: 4;
+      display: flex;
+      gap: 10px;
+      padding: 8px;
+      background: rgba(0,0,0,0.48);
+      border: 1px solid rgba(102,204,255,0.28);
+      border-radius: 999px;
+      box-shadow: 0 0 18px rgba(0,0,0,0.35), inset 0 0 14px rgba(0,0,0,0.45);
+    }
+
+    .language-button {
+      width: 54px;
+      height: 38px;
+      min-height: 38px;
+      padding: 0;
+      margin: 0;
+      border-radius: 10px;
+      font-size: 25px;
+      line-height: 1;
+      background: rgba(10, 16, 24, 0.92);
+      border: 2px solid rgba(160,180,200,0.35);
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.55), 0 3px 0 #05080c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .language-button.active-language {
+      border-color: var(--chips);
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.55),
+        0 3px 0 #05080c,
+        0 0 18px rgba(102,204,255,0.35);
+      filter: brightness(1.18);
+    }
+
+    .main-menu-button {
+      position: relative;
+      min-height: 58px;
+      padding: 15px 18px;
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(23, 45, 66, 0.96), rgba(28, 71, 98, 0.96)),
+        linear-gradient(180deg, #2e5f7a, #183346);
+      border: 2px solid rgba(102, 204, 255, 0.75);
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 17px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.55),
+        0 5px 0 #071018,
+        0 0 18px rgba(102,204,255,0.12);
+      overflow: hidden;
+    }
+
+    .main-menu-button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.16) 45%, transparent 70%);
+      transform: translateX(-120%);
+      transition: transform 0.28s;
+      pointer-events: none;
+    }
+
+    .main-menu-button:hover:not(:disabled)::before {
+      transform: translateX(120%);
+    }
+
+    .main-menu-button:hover:not(:disabled) {
+      border-color: #9ee8ff;
+      filter: brightness(1.18);
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.55),
+        0 5px 0 #071018,
+        0 0 24px rgba(102,204,255,0.28);
+    }
+
+    .main-menu-button.secondary {
+      background:
+        linear-gradient(90deg, rgba(42, 42, 50, 0.96), rgba(55, 61, 70, 0.96)),
+        linear-gradient(180deg, #4a4f5a, #292d35);
+      border-color: rgba(180, 190, 210, 0.55);
+    }
+
+    .main-menu-button.disabled-menu-button {
+      opacity: 0.48;
+      cursor: not-allowed;
+      filter: grayscale(0.45);
+    }
+
+    .settings-box {
+      display: none;
+      margin-top: 22px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.34);
+      border: 2px solid rgba(102,204,255,0.32);
+      border-radius: 12px;
+      color: #cdd8e8;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .settings-box.open {
+      display: block;
+    }
+
+    .settings-box strong {
+      color: var(--gold);
+    }
+
+
+    .pause-menu-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 190000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background:
+        linear-gradient(rgba(3, 5, 10, 0.78), rgba(3, 5, 10, 0.9)),
+        radial-gradient(circle at 50% 20%, rgba(102,204,255,0.14), transparent 32%),
+        radial-gradient(circle at 20% 80%, rgba(124,255,124,0.07), transparent 35%);
+      backdrop-filter: blur(3px);
+    }
+
+    .pause-menu-overlay.hidden {
+      display: none;
+    }
+
+    .pause-menu-box {
+      width: min(92vw, 560px);
+      padding: 32px;
+      background: linear-gradient(180deg, rgba(24, 29, 38, 0.96), rgba(10, 13, 20, 0.97));
+      border: 3px solid rgba(102, 204, 255, 0.48);
+      border-radius: 18px;
+      box-shadow:
+        0 0 0 4px rgba(0,0,0,0.75),
+        0 0 30px rgba(102,204,255,0.16),
+        inset 0 0 38px rgba(0,0,0,0.55);
+      text-align: center;
+    }
+
+    .pause-menu-title {
+      margin: 0 0 28px;
+      font-size: 48px;
+      letter-spacing: 4px;
+      color: #eaf7ff;
+      text-shadow:
+        3px 3px 0 #000,
+        0 0 18px rgba(102,204,255,0.35);
+    }
+
+    .danger-menu-button {
+      margin-top: 18px;
+      background: linear-gradient(180deg, #7a2b2b, #421616);
+      border-color: #ff7777;
+      color: #fff;
+    }
+
+    .danger-menu-button:hover:not(:disabled) {
+      border-color: #ff9999;
+      box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.55),
+        0 5px 0 #160707,
+        0 0 24px rgba(255,90,90,0.25);
+    }
+
+    .menu-hint {
+      margin-top: 18px;
+      color: #778899;
+      font-size: 12px;
+    }
+
+    .confirmation-dialog-overlay {
+      z-index: 210000;
+      background:
+        linear-gradient(rgba(3, 5, 10, 0.80), rgba(3, 5, 10, 0.92)),
+        radial-gradient(circle at 50% 20%, rgba(102,204,255,0.14), transparent 32%),
+        radial-gradient(circle at 20% 80%, rgba(124,255,124,0.07), transparent 35%);
+      backdrop-filter: blur(4px);
+    }
+
+    .confirmation-dialog-box {
+      width: min(92vw, 620px);
+    }
+
+    .confirmation-dialog-title {
+      margin-bottom: 18px;
+      font-size: 42px;
+    }
+
+    .confirmation-dialog-message {
+      white-space: pre-line;
+      text-align: left;
+      margin: 0 0 22px;
+      border-color: rgba(255, 140, 140, 0.42);
+      background: rgba(35, 8, 10, 0.34);
+      color: #e7eef8;
+    }
+
+    .confirmation-dialog-buttons {
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .confirm-yes-button {
+      background: linear-gradient(180deg, #7a2b2b, #421616);
+      border-color: #ff7777;
+      color: #fff;
+    }
+
+    .confirm-no-button {
+      background:
+        linear-gradient(90deg, rgba(42, 42, 50, 0.96), rgba(55, 61, 70, 0.96)),
+        linear-gradient(180deg, #4a4f5a, #292d35);
+      border-color: rgba(180, 190, 210, 0.55);
+    }
+
+    @media (max-width: 1280px) {
+      body {
+        overflow: auto;
+        align-items: flex-start;
+      }
+
+      .game-layout {
+        height: auto;
+        min-height: 100vh;
+        grid-template-columns: 1fr;
+      }
+
+      .side-panel {
+        height: auto;
+        max-height: none;
+      }
+
+      .scroll-panel {
+        max-height: 520px;
+      }
+
+      .work-area {
+        width: 100%;
+        min-height: 340px;
+      }
+
+      .work-display-slot {
+        min-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="mainMenuOverlay" class="main-menu-overlay">
+    <div class="language-switcher">
+      <button class="language-button active-language" data-language-button="de" title="Deutsch">🇩🇪</button>
+      <button class="language-button" data-language-button="en" title="English">🇬🇧</button>
+    </div>
+    <div class="main-menu-box">
+      <h1 class="main-menu-title">TECH IDLE</h1>
+      <div class="main-menu-buttons">
+        <button id="playButton" class="main-menu-button" data-i18n="play">Spielen</button>
+        <button id="settingsButton" class="main-menu-button secondary" data-i18n="settings">Einstellungen</button>
+        <button id="achievementsButton" class="main-menu-button secondary" data-i18n="achievements">Achievements</button>
+        <button id="quitButton" class="main-menu-button secondary disabled-menu-button" disabled data-i18n="quitGame">Spiel beenden</button>
+      </div>
+
+      <div id="settingsBox" class="settings-box">
+        <strong data-i18n="settings">Einstellungen</strong><br><br>
+        <span data-i18n="mainSettingsPlaceholder">Platzhalter für später: Lautstärke, Grafik, Effekte, Speicheroptionen und weitere Menüfunktionen.</span>
+      </div>
+
+      <div id="achievementsBox" class="settings-box">
+        <strong data-i18n="achievements">Achievements</strong><br><br>
+        <span data-i18n="mainAchievementsPlaceholder">Platzhalter für spätere Erfolge, Meilensteine und freigeschaltete Ziele.</span>
+      </div>
+
+      <div class="menu-hint" data-i18n="escOpensMainMenu">ESC öffnet dieses Hauptmenü.</div>
+    </div>
+  </div>
+
+  <div id="pauseMenuOverlay" class="pause-menu-overlay hidden">
+    <div class="language-switcher">
+      <button class="language-button active-language" data-language-button="de" title="Deutsch">🇩🇪</button>
+      <button class="language-button" data-language-button="en" title="English">🇬🇧</button>
+    </div>
+    <div class="pause-menu-box">
+      <h1 class="pause-menu-title" data-i18n="pauseTitle">PAUSE</h1>
+
+      <div class="main-menu-buttons">
+        <button id="resumeButton" class="main-menu-button" data-i18n="resume">Weiter spielen</button>
+        <button id="pauseSettingsButton" class="main-menu-button secondary" data-i18n="settings">Einstellungen</button>
+        <button id="pauseAchievementsButton" class="main-menu-button secondary" data-i18n="achievements">Achievements</button>
+        <button id="pauseBackToMainMenuButton" class="main-menu-button danger-menu-button" data-i18n="backToMainMenu">Zurück zum Hauptmenü</button>
+      </div>
+
+      <div id="pauseAchievementsBox" class="settings-box">
+        <strong data-i18n="achievements">Achievements</strong><br><br>
+        <span data-i18n="pauseAchievementsPlaceholder">Platzhalter für spätere Erfolge und Meilensteine.</span>
+      </div>
+
+      <div class="menu-hint" data-i18n="escClosesPause">ESC schließt dieses Menü.</div>
+    </div>
+  </div>
+
+  <div id="pauseSettingsOverlay" class="pause-menu-overlay hidden">
+    <div class="language-switcher">
+      <button class="language-button active-language" data-language-button="de" title="Deutsch">🇩🇪</button>
+      <button class="language-button" data-language-button="en" title="English">🇬🇧</button>
+    </div>
+    <div class="pause-menu-box">
+      <h1 class="pause-menu-title" data-i18n="settingsUpper">EINSTELLUNGEN</h1>
+
+      <div class="settings-page-content">
+        <div class="settings-section">
+          <strong data-i18n="general">Allgemein</strong><br><br>
+          <span data-i18n="pauseSettingsPlaceholder">Platzhalter für spätere Einstellungen während des Spiels.</span>
+        </div>
+
+        <div class="settings-danger-zone">
+          <strong data-i18n="savegame">Spielstand</strong>
+          <div class="settings-warning" data-i18n="deleteSaveWarningHtml">
+            WARNUNG:<br>
+            Wenn du den Spielstand löschst, werden Geld, Shop, Upgrades, Forschung, Chips und Rebirth-Fortschritt zurückgesetzt.
+            Diese Aktion kann nicht rückgängig gemacht werden.
+          </div>
+          <button id="pauseDeleteSaveButton" class="settings-delete-button" data-i18n="deleteSave">Spielstand löschen</button>
+        </div>
+      </div>
+
+      <div class="main-menu-buttons">
+        <button id="settingsBackButton" class="main-menu-button secondary" data-i18n="back">Zurück</button>
+      </div>
+
+      <div class="menu-hint" data-i18n="escBackToPause">ESC zurück zum Pause-Menü.</div>
+    </div>
+  </div>
+
+  <div id="confirmDialogOverlay" class="pause-menu-overlay confirmation-dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle">
+    <div class="pause-menu-box confirmation-dialog-box">
+      <h1 id="confirmDialogTitle" class="pause-menu-title confirmation-dialog-title" data-i18n="confirmTitle">BESTÄTIGEN</h1>
+
+      <div id="confirmDialogMessage" class="settings-page-content confirmation-dialog-message"></div>
+
+      <div class="main-menu-buttons confirmation-dialog-buttons">
+        <button id="confirmDialogYesButton" class="main-menu-button confirm-yes-button" data-i18n="yes">Ja</button>
+        <button id="confirmDialogNoButton" class="main-menu-button confirm-no-button" data-i18n="no">Nein</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-layout">
+
+    <div class="panel side-panel shop-panel">
+      <h2 id="shopPanelTitle" class="panel-title-fixed" data-i18n="shop">Shop</h2>
+
+      <div class="shop-edge-switcher" aria-label="Shop Bereich wechseln">
+        <button id="openFoundationTabButton" class="shop-edge-button active-tab" title="Firmengründung" aria-label="Firmengründung öffnen">
+          <span class="edge-button-placeholder">🏢</span>
+          <img class="edge-button-img" src="assets/ui/firmengruendung.png" alt="Firmengründung">
+        </button>
+        <button id="openShopTabButton" class="shop-edge-button hidden" title="Shop" aria-label="Shop öffnen">
+          <span class="edge-button-placeholder">🛒</span>
+          <img class="edge-button-img" src="assets/ui/shop.png" alt="Shop">
+        </button>
+      </div>
+
+      <div class="scroll-panel">
+      <div id="shopItemsTab" class="shop-tab-content">
+      <div class="tooltip item-card">
+        <button id="buyComputer" class="card-button">
+          <span class="asset-icon-slot" data-asset="roehrcomputer">
+            <span class="asset-placeholder">🖥️</span>
+            <img class="asset-img" src="assets/shop-icons/roehrcomputer.png" alt="Röhrencomputer">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n="tubeComputer">Röhrencomputer</span>
+            <span class="card-cost"><span id="compCost">100</span> €</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="tubeComputerTooltip">Gibt +0,5 € passives Einkommen pro Sekunde.</div>
+      </div>
+      <div><span data-i18n="tubeComputers">Röhrencomputer</span>: <span id="compCount">0</span> / 100</div>
+
+      <div id="workstationSection" class="hidden">
+        <div class="tooltip item-card">
+          <button id="buyWorkstation" class="card-button">
+            <span class="asset-icon-slot" data-asset="arbeitsstation">
+              <span class="asset-placeholder">🖥️</span>
+              <img class="asset-img" src="assets/shop-icons/arbeitsstation.png" alt="Arbeitsstation">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="workstation">Arbeitsstation</span>
+              <span class="card-cost"><span id="wsCost">2500</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext">
+            <span data-i18n="workstationTooltipHtml">Gibt +5 € passives Einkommen pro Sekunde.<br>Mit Arbeitsstation-Boost: +50 €/s.</span>
+          </div>
+        </div>
+        <div><span data-i18n="workstations">Arbeitsstationen</span>: <span id="wsCount">0</span> / 100</div>
+      </div>
+
+      <div id="serverRackSection" class="hidden">
+        <div class="tooltip item-card">
+          <button id="buyServerRack" class="card-button">
+            <span class="asset-icon-slot" data-asset="serverschrank">
+              <span class="asset-placeholder">🗄️</span>
+              <img class="asset-img" src="assets/shop-icons/serverschrank.png" alt="Serverschrank">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="serverRack">Serverschrank</span>
+              <span class="card-cost"><span id="serverRackCost">50000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="serverRackTooltip">Gibt +1.000 € passives Einkommen pro Sekunde.</div>
+        </div>
+        <div><span data-i18n="serverRacks">Serverschränke</span>: <span id="serverRackCount">0</span> / 100</div>
+      </div>
+
+      <div id="officeComplexSection" class="hidden">
+        <div class="tooltip item-card">
+          <button id="buyOfficeComplex" class="card-button">
+            <span class="asset-icon-slot" data-asset="buerokomplex">
+              <span class="asset-placeholder">🏢</span>
+              <img class="asset-img" src="assets/shop-icons/buerokomplex.png" alt="Bürokomplex">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="officeComplex">Bürokomplex</span>
+              <span class="card-cost"><span id="officeComplexCost">500000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="officeComplexTooltip">Gibt +10.000 € passives Einkommen pro Sekunde.</div>
+        </div>
+        <div><span data-i18n="officeComplexes">Bürokomplexe</span>: <span id="officeComplexCount">0</span> / 100</div>
+      </div>
+
+      <div id="marketingDepartmentSection" class="hidden">
+        <div class="tooltip item-card">
+          <button id="buyMarketingDepartment" class="card-button">
+            <span class="asset-icon-slot" data-asset="marketingabteilung">
+              <span class="asset-placeholder">📣</span>
+              <img class="asset-img" src="assets/shop-icons/marketingabteilung.png" alt="Marketingabteilung">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="marketingDepartment">Marketingabteilung</span>
+              <span class="card-cost"><span id="marketingDepartmentCost">10000000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="marketingDepartmentTooltip">Gibt +100.000 € passives Einkommen pro Sekunde.</div>
+        </div>
+        <div><span data-i18n="marketingDepartments">Marketingabteilungen</span>: <span id="marketingDepartmentCount">0</span> / 100</div>
+      </div>
+
+      <div id="customerSupportSection" class="hidden">
+        <div class="tooltip item-card">
+          <button id="buyCustomerSupport" class="card-button">
+            <span class="asset-icon-slot" data-asset="kundenservice">
+              <span class="asset-placeholder">🎧</span>
+              <img class="asset-img" src="assets/shop-icons/kundenservice.png" alt="Kundenservice">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="customerSupport">Kundenservice</span>
+              <span class="card-cost"><span id="customerSupportCost">150000000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="customerSupportTooltip">Gibt +1M € passives Einkommen pro Sekunde.</div>
+        </div>
+        <div><span data-i18n="customerSupportPlural">Kundenservice</span>: <span id="customerSupportCount">0</span> / 100</div>
+      </div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-7">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-7.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="7">Shop-Slot 7</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-8">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-8.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="8">Shop-Slot 8</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-9">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-9.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="9">Shop-Slot 9</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-10">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-10.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="10">Shop-Slot 10</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-11">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-11.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="11">Shop-Slot 11</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-12">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-12.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="12">Shop-Slot 12</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-13">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-13.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="13">Shop-Slot 13</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-14">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-14.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="14">Shop-Slot 14</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      <div class="tooltip item-card coming-soon-card">
+        <button class="card-button" disabled>
+          <span class="asset-icon-slot" data-asset="shop-coming-soon-15">
+            <span class="asset-placeholder">?</span>
+            <img class="asset-img" src="assets/shop-icons/shop-coming-soon-15.png" alt="Coming Soon">
+          </span>
+          <span class="card-text">
+            <span class="card-title" data-i18n-template="shopSlot" data-i18n-value="15">Shop-Slot 15</span>
+            <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+          </span>
+        </button>
+        <div class="tooltiptext" data-i18n="shopPlaceholderTooltip">Platzhalter für ein späteres Shop-Item.</div>
+      </div>
+      <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+      </div>
+
+      <div id="foundationTab" class="shop-tab-content hidden">
+        <div class="foundation-placeholder-card">
+          <div class="foundation-placeholder-icon">🏢</div>
+          <h3 data-i18n="foundation">Firmengründung</h3>
+          <p data-i18n="foundationPlaceholder">Platzhalter für spätere Firmen-Mechaniken, Gründungsstufen und neue Geschäftsbereiche.</p>
+        </div>
+      </div>
+
+      <div class="scroll-fade-bottom"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h1>Tech Idle</h1>
+
+      <div class="money"><span data-i18n="money">Geld</span>: <span id="money">0</span> €</div>
+      <div class="chips"><span data-i18n="computerChips">Computerchips</span>: <span id="chips">0</span></div>
+      <div class="gigachips"><span data-i18n="gigachips">Gigachips</span>: <span id="gigachips">0</span></div>
+
+      <div class="test-switch-area">
+        <span data-i18n="testMode">Testmodus</span>
+        <input type="checkbox" id="testToggle">
+      </div>
+
+      <div id="workArea" class="work-area">
+        <div class="work-display-slot">
+          <span id="workDisplayPlaceholder" class="work-display-placeholder">📦</span>
+          <img id="workDisplayImg" class="work-display-img" src="assets/work-backgrounds/paket.png" alt="Aktuelles Arbeitsobjekt">
+        </div>
+        <div id="clickEffectLayer" class="click-effect-layer" aria-hidden="true"></div>
+      </div>
+
+      <div id="workText" class="work-label" data-i18n="clickPackage">Klicke auf das Paket</div>
+      <div id="bonusFlash" class="bonus-flash"></div>
+
+      <div class="stats-frame">
+        <div class="stats">
+          <span data-i18n="clickValue">Klickwert</span>: <span id="clickValue">1</span> €<br>
+          <span data-i18n="fastHandsBonus">Schnelle-Hände-Bonus</span>: <span id="fastHandsClickBonus">0</span> €/Klick<br>
+          <span data-i18n="clicks">Klicks</span>: <span id="clickCounter">0</span><br>
+          <span data-i18n="workerClicks">Arbeiter-Klicks</span>: <span id="workerClicksPerSecond">0</span> /s<br>
+          <span data-i18n="turboClickChance">Turbo-Klick-Chance</span>: <span id="turboChance">0</span> %<br>
+          <span data-i18n="passiveIncome">Passives Einkommen</span>: <span id="income">0</span> €/s<br>
+          <span data-i18n="shopBonus">Shop-Bonus durch Übertakten</span>: <span id="shopBonus">0</span> %<br>
+          <span data-i18n="clickResearch">Klick-Forschung</span>: <span id="clickBonus">0</span> %<br>
+          <span data-i18n="passiveResearch">Passiv-Forschung</span>: <span id="passiveBonus">0</span> %<br>
+          <span data-i18n="chipsPerMilestone">Chips pro Meilenstein</span>: <span id="chipsPerMilestone">1</span><br>
+          <span data-i18n="gigachipChance">Gigachip-Chance</span>: <span id="gigachipChance">0.01</span> %/s
+        </div>
+      </div>
+
+      <div class="save-area autosave-info">
+        <div data-i18n="autosaveActive">Autosave aktiv</div>
+        <div id="saveStatus" class="save-status"></div>
+      </div>
+    </div>
+
+    <div class="panel side-panel">
+      <div class="tab-buttons panel-title-fixed">
+        <button id="upgradesTabButton" class="active-tab" data-i18n="upgrades">Upgrades</button>
+        <button id="researchTabButton" data-i18n="research">Forschung</button>
+      </div>
+
+      <div class="scroll-panel">
+      <div id="upgradesTab">
+        <h2>Upgrades</h2>
+
+        <div class="tooltip item-card">
+          <button id="buyBetterMouse" class="card-button">
+            <span class="asset-icon-slot" data-asset="bessere-maus">
+              <span class="asset-placeholder">🖱️</span>
+              <img class="asset-img" src="assets/upgrade-icons/bessere-maus.png" alt="Bessere Maus">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="betterMouse">Bessere Maus</span>
+              <span class="card-cost"><span id="betterMouseCost">25</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="betterMouseTooltip">Erhöht den Klickwert um +1 €.</div>
+        </div>
+        <div><span data-i18n="betterMice">Bessere Mäuse</span>: <span id="betterMouseCount">0</span> / 100</div>
+
+        <div class="tooltip item-card">
+          <button id="buyGoldenMouse" class="card-button">
+            <span class="asset-icon-slot" data-asset="goldene-maus">
+              <span class="asset-placeholder">🟡🖱️</span>
+              <img class="asset-img" src="assets/upgrade-icons/goldene-maus.png" alt="Goldene Maus">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="goldenMouse">Goldene Maus</span>
+              <span class="card-cost"><span id="goldenMouseCost">200</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="goldenMouseTooltip">Gibt alle 10 Klicks +5 € Bonus pro goldener Maus.</div>
+        </div>
+        <div><span data-i18n="goldenMice">Goldene Mäuse</span>: <span id="goldenMouseCount">0</span> / 100</div>
+
+        <div class="tooltip item-card">
+          <button id="buyTurboClick" class="card-button">
+            <span class="asset-icon-slot" data-asset="turbo-klick">
+              <span class="asset-placeholder">🖱️💨</span>
+              <img class="asset-img" src="assets/upgrade-icons/turbo-klick.png" alt="Turbo Klick">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="turboClick">Turbo Klick</span>
+              <span class="card-cost"><span id="turboClickCost">500</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext">
+            <span data-i18n="turboClickTooltipHtml">+10 % Chance pro Level, dass ein Klick doppelt zählt.<br>Maximal 5 Level.</span>
+          </div>
+        </div>
+        <div><span data-i18n="turboClick">Turbo Klick</span>: <span data-i18n="level">Level</span> <span id="turboClickLevel">0</span> / 5</div>
+
+        <div class="tooltip item-card">
+          <button id="buyWorkstationBoost" class="card-button">
+            <span class="asset-icon-slot" data-asset="arbeitsstation-boost">
+              <span class="asset-placeholder">⚙️</span>
+              <img class="asset-img" src="assets/upgrade-icons/arbeitsstation-boost.png" alt="Arbeitsstation-Boost">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="workstationBoost">Arbeitsstation-Boost</span>
+              <span class="card-cost"><span id="workstationBoostCost">10000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext">
+            <span data-i18n="workstationBoostTooltip">Einmaliger Kauf: Arbeitsstationen bringen x10 passives Einkommen.</span>
+          </div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span id="workstationBoostStatus">Nicht gekauft</span></div>
+
+        <div class="tooltip item-card">
+          <button id="buyWorker" class="card-button">
+            <span class="asset-icon-slot" data-asset="arbeiter">
+              <span class="asset-placeholder">👷</span>
+              <img class="asset-img" src="assets/upgrade-icons/arbeiter.png" alt="Arbeiter">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="worker">Arbeiter</span>
+              <span class="card-cost"><span id="workerCost">1000000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="workerTooltipHtml">Klicken automatisch für dich.<br>+0,5 Klicks pro Sekunde pro Level.<br>Maximal 10 Level.</div>
+        </div>
+        <div><span data-i18n="worker">Arbeiter</span>: <span data-i18n="level">Level</span> <span id="workerLevel">0</span> / 10</div>
+
+        <div class="tooltip item-card">
+          <button id="buyFastHands" class="card-button">
+            <span class="asset-icon-slot" data-asset="schnelle-haende">
+              <span class="asset-placeholder">⚡🖐️</span>
+              <img class="asset-img" src="assets/upgrade-icons/schnelle-haende.png" alt="Schnelle Hände">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n="fastHands">Schnelle Hände</span>
+              <span class="card-cost"><span id="fastHandsCost">50000000</span> €</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="fastHandsTooltipHtml">Einmaliger Kauf: Jeder manuelle Klick und jeder Arbeiter-Klick erhält +5 % deines passiven Einkommens als Bonus. Klick-Forschung verstärkt nur manuelle Klicks.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span id="fastHandsStatus">Nicht gekauft</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-7">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-7.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="7">Upgrade-Slot 7</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-8">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-8.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="8">Upgrade-Slot 8</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-9">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-9.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="9">Upgrade-Slot 9</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-10">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-10.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="10">Upgrade-Slot 10</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-11">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-11.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="11">Upgrade-Slot 11</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-12">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-12.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="12">Upgrade-Slot 12</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-13">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-13.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="13">Upgrade-Slot 13</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-14">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-14.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="14">Upgrade-Slot 14</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+
+        <div class="tooltip item-card coming-soon-card">
+          <button class="card-button" disabled>
+            <span class="asset-icon-slot" data-asset="upgrade-coming-soon-15">
+              <span class="asset-placeholder">?</span>
+              <img class="asset-img" src="assets/upgrade-icons/upgrade-coming-soon-15.png" alt="Coming Soon">
+            </span>
+            <span class="card-text">
+              <span class="card-title" data-i18n-template="upgradeSlot" data-i18n-value="15">Upgrade-Slot 15</span>
+              <span class="card-cost" data-i18n="comingSoon">Coming Soon</span>
+            </span>
+          </button>
+          <div class="tooltiptext" data-i18n="upgradePlaceholderTooltip">Platzhalter für ein späteres Upgrade.</div>
+        </div>
+        <div><span data-i18n="status">Status</span>: <span data-i18n="notAvailable">Noch nicht verfügbar</span></div>
+      </div>
+
+      <div id="researchTab" class="hidden">
+        <h2 data-i18n="reincarnation">Reinkarnation</h2>
+
+        <div class="chips">
+          <span data-i18n="computerChips">Computerchips</span>: <span id="reincarnationChips">0</span>
+        </div>
+
+        <div class="reincarnation-info">
+          <span data-i18n="reincarnationInfo">Nutze Computerchips, um permanente Boni im Forschungsbaum zu kaufen.</span>
+        </div>
+
+        <div class="research-warning" data-i18n="rebirthWarningHtml">
+          WARNUNG:<br>
+          Beim Aktivieren von Rebirth wird dein aktueller Fortschritt zurückgesetzt.
+          Permanente Forschungsboni bleiben später erhalten.
+        </div>
+
+        <button id="rebirthButton" class="danger" data-i18n="activateRebirth">Rebirth aktivieren</button>
+        <button id="openSkillTreeButton" data-i18n="viewSkilltree">Skillbaum anschauen</button>
+      </div>
+      <div class="scroll-fade-bottom"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="skillTreeOverlay" class="skilltree-overlay">
+    <div class="skilltree-header">
+      <h1 data-i18n="skilltree">Forschungsbaum</h1>
+      <button id="closeSkillTreeButton" class="close-overlay-button" data-i18n="close">Schließen</button>
+    </div>
+
+    <div class="tree-area">
+      <div id="skillTreeViewport" class="tree-viewport">
+        <div id="skillTreeCanvas" class="tree-canvas">
+          <svg class="tree-connections" viewBox="0 0 1000 900" aria-hidden="true">
+            <path class="tree-connection-glow" d="M500 210 L500 128" />
+            <path class="tree-connection-main" d="M500 210 L500 128" />
+
+            <path class="tree-connection-glow" d="M546 256 L724 256" />
+            <path class="tree-connection-main" d="M546 256 L724 256" />
+
+            <path class="tree-connection-glow" d="M500 302 L500 384 L230 384 L230 492" />
+            <path class="tree-connection-main" d="M500 302 L500 384 L230 384 L230 492" />
+
+            <path class="tree-connection-glow" d="M230 584 L230 674" />
+            <path class="tree-connection-main" d="M230 584 L230 674" />
+
+            <path class="tree-connection-glow" d="M500 302 L500 492" />
+            <path class="tree-connection-main" d="M500 302 L500 492" />
+
+            <path class="tree-connection-glow" d="M500 584 L500 674" />
+            <path class="tree-connection-main" d="M500 584 L500 674" />
+
+            <path class="tree-connection-glow" d="M500 302 L500 384 L770 384 L770 492" />
+            <path class="tree-connection-main" d="M500 302 L500 384 L770 384 L770 492" />
+          </svg>
+
+          <div class="tree-node" id="companyStarterSkill" style="left:454px; top:36px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-company-starter">
+              <span class="asset-placeholder">🏢</span>
+              <img class="asset-img" src="assets/skilltree/skill-company-starter.png" alt="Firmenstarter">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="companyStarterSkill">Firmenstarter</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="companyStarterSkillEffectHtml">Verbessert deinen Start nach dem Rebirth.<br>Mit jedem Level startet dein neuer Run automatisch mit einem weiteren frühen Shop-Item.</span><br>
+              <span data-i18n="nextLevel">Nächstes Level</span>: <span id="companyStarterNextEffect">Röhrencomputer</span><br><br>
+              <span data-i18n="level">Level</span>: <span id="companyStarterSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="companyStarterSkillCost">25</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="overclock">Übertakten</span>
+            </div>
+          </div>
+
+          <div class="tree-node start" id="overclockSkill" style="left:454px; top:210px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-overclock">
+              <span class="asset-placeholder">⚡</span>
+              <img class="asset-img" src="assets/skilltree/skill-overclock.png" alt="Übertakten">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="overclock">Übertakten</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="overclockEffectHtml">Effekt: Shop-Items werden +10 % stärker.<br>Betrifft Röhrencomputer, Arbeitsstationen und Serverschränke.</span><br><br>
+              <span data-i18n="cost">Kosten</span>: 1 <span data-i18n="computerChipSingular">Computerchip</span><br>
+              <span data-i18n="status">Status</span>: <span id="overclockStatus">Nicht gekauft</span>
+            </div>
+          </div>
+
+          <div class="tree-node" id="startCapitalSkill" style="left:724px; top:210px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-start-capital">
+              <span class="asset-placeholder">💶</span>
+              <img class="asset-img" src="assets/skilltree/skill-start-capital.png" alt="Startkapital">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="startCapitalSkill">Startkapital</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="startCapitalSkillEffectHtml">Neue Runs starten nach dem Rebirth mit zusätzlichem Geld.</span><br>
+              <span data-i18n="nextLevel">Nächstes Level</span>: <span id="startCapitalNextEffect">1K €</span><br><br>
+              <span data-i18n="level">Level</span>: <span id="startCapitalSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="startCapitalSkillCost">20</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="overclock">Übertakten</span>
+            </div>
+          </div>
+
+          <div class="tree-node" id="clickSkill" style="left:184px; top:492px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-click">
+              <span class="asset-placeholder">🖱️</span>
+              <img class="asset-img" src="assets/skilltree/skill-click.png" alt="Klickwert verbessern">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="clickSkill">Klickwert verbessern</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="clickSkillEffect">Erhöht dein aktives Einkommen pro Klick.</span><br>
+              <span data-i18n="currentBonus">Aktueller Bonus</span>: +<span id="clickSkillCurrentBonus">0</span> %.<br>
+              <span data-i18n="maxLevelGives">Max-Level gibt</span> +250 %.<br><br>
+              <span data-i18n="level">Level</span>: <span id="clickSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="clickSkillCost">5</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="overclock">Übertakten</span>
+            </div>
+          </div>
+
+          <div class="tree-node" id="workerAutomationSkill" style="left:184px; top:674px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-worker-automation">
+              <span class="asset-placeholder">🤖</span>
+              <img class="asset-img" src="assets/skilltree/skill-worker-automation.png" alt="Arbeiter-Automatisierung">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="workerAutomationSkill">Arbeiter-Automatisierung</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="workerAutomationSkillEffect">Erhöht die Klickrate deiner Arbeiter.</span><br>
+              <span data-i18n="currentBonus">Aktueller Bonus</span>: +<span id="workerAutomationSkillCurrentBonus">0</span> %.<br>
+              <span data-i18n="maxLevelGives">Max-Level gibt</span> +75 %.<br><br>
+              <span data-i18n="level">Level</span>: <span id="workerAutomationSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="workerAutomationSkillCost">10</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="clickSkill">Klickwert verbessern</span>
+            </div>
+          </div>
+
+          <div class="tree-node" id="passiveSkill" style="left:454px; top:492px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-passive">
+              <span class="asset-placeholder">📈</span>
+              <img class="asset-img" src="assets/skilltree/skill-passive.png" alt="Passives Einkommen verbessern">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="passiveSkill">Passives Einkommen verbessern</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="passiveSkillEffect">Erhöht dein gesamtes passives Einkommen.</span><br>
+              <span data-i18n="currentBonus">Aktueller Bonus</span>: +<span id="passiveSkillCurrentBonus">0</span> %.<br>
+              <span data-i18n="maxLevelGives">Max-Level gibt</span> +250 %.<br><br>
+              <span data-i18n="level">Level</span>: <span id="passiveSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="passiveSkillCost">5</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="overclock">Übertakten</span>
+            </div>
+          </div>
+
+          <div class="tree-node" id="scaleEffectsSkill" style="left:454px; top:674px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-scale-effects">
+              <span class="asset-placeholder">🏭</span>
+              <img class="asset-img" src="assets/skilltree/skill-scale-effects.png" alt="Skaleneffekte">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="scaleEffectsSkill">Skaleneffekte</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="scaleEffectsSkillEffectHtml">Je mehr du von einem Shop-Item besitzt, desto stärker produziert diese Kategorie.</span><br>
+              <span data-i18n="currentBonus">Aktueller Bonus</span>: +<span id="scaleEffectsCurrentBonus">0</span> % <span data-i18n="perItem">pro Item</span>.<br>
+              <span data-i18n="maxLevelGives">Max-Level gibt</span> +0,25 % <span data-i18n="perItem">pro Item</span>.<br><br>
+              <span data-i18n="level">Level</span>: <span id="scaleEffectsSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="scaleEffectsSkillCost">20</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="passiveSkill">Passives Einkommen verbessern</span>
+            </div>
+          </div>
+
+          <div class="tree-node" id="chipSkill" style="left:724px; top:492px;">
+            <div class="tree-icon skill-asset-slot" data-asset="skill-chips">
+              <span class="asset-placeholder">💾</span>
+              <img class="asset-img" src="assets/skilltree/skill-chips.png" alt="Chip-Ausbeute verbessern">
+            </div>
+            <div class="tree-details">
+              <strong data-i18n="chipSkill">Chip-Ausbeute verbessern</strong><br><br>
+              <span data-i18n="clickToResearch">Klick zum Erforschen.</span><br><br>
+              <span data-i18n="chipSkillEffectHtml">Startwert: 1 Chip pro Geld-Meilenstein.<br>Jedes Level verdoppelt die Ausbeute.<br>1 / 2 / 4 / 8 / 16 / 32</span><br>
+              <span data-i18n="chipBonusPerLevel">Aktuelle Ausbeute</span>: <span id="chipSkillCurrentYield">1</span> <span data-i18n="computerChipsPlural">Chips</span> pro Meilenstein.<br><br>
+              <span data-i18n="level">Level</span>: <span id="chipSkillLevel">0</span> / 5<br>
+              <span data-i18n="cost">Kosten</span>: <span id="chipSkillCost">10</span> <span data-i18n="computerChipsPlural">Chips</span><br>
+              <span data-i18n="required">Benötigt</span>: <span data-i18n="overclock">Übertakten</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="skilltree-footer">
+        <div id="skillTreeModeText" class="skilltree-mode-text">
+          <span data-i18n="skilltreeViewModeShort">Ansichtsmodus: Du kannst den Forschungsbaum ansehen, aber noch keine Punkte verteilen.</span>
+        </div>
+        <button id="startRunButton" class="start-run-button" data-i18n="startNewRun">Neuen Run starten</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const saveKey = "techIdleGameSave_v10_icon_only_tree";
+
+
+    // =========================
+    // SPRACHSYSTEM / LANGUAGE SYSTEM
+    // =========================
+    const translations = {
+      de: {
+        play: "Spielen",
+        settings: "Einstellungen",
+        settingsUpper: "EINSTELLUNGEN",
+        achievements: "Achievements",
+        quitGame: "Spiel beenden",
+        mainSettingsPlaceholder: "Platzhalter für später: Lautstärke, Grafik, Effekte, Speicheroptionen und weitere Menüfunktionen.",
+        mainAchievementsPlaceholder: "Platzhalter für spätere Erfolge, Meilensteine und freigeschaltete Ziele.",
+        escOpensMainMenu: "ESC öffnet dieses Hauptmenü.",
+        pauseTitle: "PAUSE",
+        resume: "Weiter spielen",
+        backToMainMenu: "Zurück zum Hauptmenü",
+        escClosesPause: "ESC schließt dieses Menü.",
+        general: "Allgemein",
+        pauseSettingsPlaceholder: "Platzhalter für spätere Einstellungen während des Spiels.",
+        pauseAchievementsPlaceholder: "Platzhalter für spätere Erfolge und Meilensteine.",
+        savegame: "Spielstand",
+        deleteSaveWarningHtml: "WARNUNG:<br>Wenn du den Spielstand löschst, werden Geld, Shop, Upgrades, Forschung, Chips und Rebirth-Fortschritt zurückgesetzt.<br>Diese Aktion kann nicht rückgängig gemacht werden.",
+        deleteSave: "Spielstand löschen",
+        back: "Zurück",
+        escBackToPause: "ESC zurück zum Pause-Menü.",
+        upgrades: "Upgrades",
+        research: "Forschung",
+        activateRebirth: "Rebirth aktivieren",
+        viewSkilltree: "Skillbaum anschauen",
+        close: "Schließen",
+        startNewRun: "Neuen Run starten",
+        closeAfterStart: "Erst Start drücken",
+        skilltreeViewMode: "Ansichtsmodus: Du kannst den Forschungsbaum ansehen, aber noch keine Punkte verteilen. Rebirth aktiviert die Punkteverteilung.",
+        skilltreeRebirthMode: "Rebirth aktiv: Verteile jetzt deine Computerchips im Forschungsbaum. Drücke danach unten auf 'Neuen Run starten'.",
+        bought: "Gekauft",
+        notBought: "Nicht gekauft",
+        clickPackage: "Klicke auf das Paket",
+        clickTubeComputer: "Klicke auf den Röhrencomputer",
+        clickWorkstation: "Klicke auf die Arbeitsstation",
+        clickServerRack: "Klicke auf den Serverschrank",
+        clickOfficeComplex: "Klicke auf den Bürokomplex",
+        clickMarketingDepartment: "Klicke auf die Marketingabteilung",
+        clickCustomerSupport: "Klicke auf den Kundenservice",
+        gigachipProduced: "GIGACHIP PRODUZIERT!",
+        turboClickMsg: "Turbo Klick! ",
+        goldenMouseMsg: "Goldene Maus +{value} €!",
+        confirmTitle: "BESTÄTIGEN",
+        yes: "Ja",
+        no: "Nein",
+        confirmDeleteSave: "Spielstand wirklich löschen?\n\nAlle Fortschritte werden zurückgesetzt. Diese Aktion kann nicht rückgängig gemacht werden.",
+        confirmRebirth: "Rebirth wirklich aktivieren?\n\nDein Geld, Shop, normale Upgrades und Klickzähler werden zurückgesetzt.\nDanach kannst du im Forschungsbaum Computerchips verteilen.\nErst wenn du auf 'Neuen Run starten' drückst, beginnt der nächste Run.",
+        saved: "Gespeichert.",
+        noSaveFound: "Kein Spielstand gefunden.",
+        saveLoaded: "Spielstand geladen.",
+        saveLoadError: "Spielstand konnte nicht geladen werden.",
+        saveDeleted: "Spielstand gelöscht.",
+        shop: "Shop",
+        foundation: "Firmengründung",
+        foundationPlaceholder: "Platzhalter für spätere Firmen-Mechaniken, Gründungsstufen und neue Geschäftsbereiche.",
+        openFoundation: "Firmengründung öffnen",
+        openShop: "Shop öffnen",
+        tubeComputer: "Röhrencomputer",
+        tubeComputers: "Röhrencomputer",
+        tubeComputerTooltip: "Gibt +0,5 € passives Einkommen pro Sekunde.",
+        workstation: "Arbeitsstation",
+        workstations: "Arbeitsstationen",
+        workstationTooltipHtml: "Gibt +5 € passives Einkommen pro Sekunde.<br>Mit Arbeitsstation-Boost: +50 €/s.",
+        serverRack: "Serverschrank",
+        serverRacks: "Serverschränke",
+        serverRackTooltip: "Gibt +1.000 € passives Einkommen pro Sekunde.",
+        officeComplex: "Bürokomplex",
+        officeComplexes: "Bürokomplexe",
+        officeComplexTooltip: "Gibt +10.000 € passives Einkommen pro Sekunde.",
+        marketingDepartment: "Marketingabteilung",
+        marketingDepartments: "Marketingabteilungen",
+        marketingDepartmentTooltip: "Gibt +100.000 € passives Einkommen pro Sekunde.",
+        customerSupport: "Kundenservice",
+        customerSupportPlural: "Kundenservice",
+        customerSupportTooltip: "Gibt +1M € passives Einkommen pro Sekunde.",
+        money: "Geld",
+        computerChips: "Computerchips",
+        gigachips: "Gigachips",
+        testMode: "Testmodus",
+        clickValue: "Klickwert",
+        clicks: "Klicks",
+        workerClicks: "Arbeiter-Klicks",
+        turboClickChance: "Turbo-Klick-Chance",
+        passiveIncome: "Passives Einkommen",
+        shopBonus: "Shop-Bonus durch Übertakten",
+        clickResearch: "Klick-Forschung",
+        passiveResearch: "Passiv-Forschung",
+        chipsPerMilestone: "Chips pro Geld-Meilenstein",
+        gigachipChance: "Gigachip-Chance",
+        autosaveActive: "Autosave aktiv",
+        betterMouse: "Bessere Maus",
+        betterMouseTooltip: "Erhöht den Klickwert um +1 €.",
+        betterMice: "Bessere Mäuse",
+        goldenMouse: "Goldene Maus",
+        goldenMouseTooltip: "Gibt alle 10 Klicks +5 € Bonus pro goldener Maus.",
+        goldenMice: "Goldene Mäuse",
+        turboClick: "Turbo Klick",
+        turboClickTooltipHtml: "+10 % Chance pro Level, dass ein Klick doppelt zählt.<br>Maximal 5 Level.",
+        level: "Level",
+        workstationBoost: "Arbeitsstation-Boost",
+        workstationBoostTooltip: "Einmaliger Kauf: Arbeitsstationen bringen x10 passives Einkommen.",
+        worker: "Arbeiter",
+        workerTooltipHtml: "Klicken automatisch für dich.<br>+0,5 Klicks pro Sekunde pro Level.<br>Maximal 10 Level.",
+        workerAutomationSkill: "Arbeiter-Automatisierung",
+        workerAutomationSkillEffect: "Erhöht die Klickrate deiner Arbeiter um +15 % pro Level.",
+        companyStarterSkill: "Firmenstarter",
+        companyStarterSkillEffectHtml: "Verbessert deinen Start nach dem Rebirth.<br>Mit jedem Level startet dein neuer Run automatisch mit einem weiteren frühen Shop-Item.",
+        nextLevel: "Nächstes Level",
+        companyStarterNoBonus: "Kein Startbonus",
+        companyStarterLevel1: "Start mit 1 Röhrencomputer",
+        companyStarterLevel2: "Start mit 1 Röhrencomputer und 1 Arbeitsstation",
+        companyStarterLevel3: "Start mit 1 Röhrencomputer, 1 Arbeitsstation und 1 Serverschrank",
+        companyStarterLevel4: "Start mit 1 Röhrencomputer, 1 Arbeitsstation, 1 Serverschrank und 1 Bürokomplex",
+        companyStarterLevel5: "Start mit 1 Röhrencomputer, 1 Arbeitsstation, 1 Serverschrank, 1 Bürokomplex und 1 Marketingabteilung",
+        companyStarterNextLevel1: "Röhrencomputer",
+        companyStarterNextLevel2: "Arbeitsstation",
+        companyStarterNextLevel3: "Serverschrank",
+        companyStarterNextLevel4: "Bürokomplex",
+        companyStarterNextLevel5: "Marketingabteilung",
+        startCapitalSkill: "Startkapital",
+        startCapitalSkillEffectHtml: "Neue Runs starten nach dem Rebirth mit zusätzlichem Geld.",
+        startCapitalNextLevel1: "1K €",
+        startCapitalNextLevel2: "10K €",
+        startCapitalNextLevel3: "100K €",
+        startCapitalNextLevel4: "1M €",
+        startCapitalNextLevel5: "10M €",
+        scaleEffectsSkill: "Skaleneffekte",
+        scaleEffectsSkillEffectHtml: "Je mehr du von einem Shop-Item besitzt, desto stärker produziert diese Kategorie.",
+        perItem: "pro Item",
+        fastHands: "Schnelle Hände",
+        fastHandsTooltipHtml: "Einmaliger Kauf: Jeder manuelle Klick und jeder Arbeiter-Klick erhält +5 % deines passiven Einkommens als Bonus. Klick-Forschung verstärkt nur manuelle Klicks.",
+        fastHandsBonus: "Schnelle-Hände-Bonus",
+        status: "Status",
+        comingSoon: "Coming Soon",
+        notAvailable: "Noch nicht verfügbar",
+        shopPlaceholderTooltip: "Platzhalter für ein späteres Shop-Item.",
+        upgradePlaceholderTooltip: "Platzhalter für ein späteres Upgrade.",
+        shopSlot: "Shop-Slot {value}",
+        upgradeSlot: "Upgrade-Slot {value}",
+        reincarnation: "Reinkarnation",
+        reincarnationInfo: "Nutze Computerchips, um permanente Boni im Forschungsbaum zu kaufen.",
+        rebirthWarningHtml: "WARNUNG:<br>Beim Aktivieren von Rebirth wird dein aktueller Fortschritt zurückgesetzt. Permanente Forschungsboni bleiben später erhalten.",
+        skilltree: "Forschungsbaum",
+        overclock: "Übertakten",
+        clickToResearch: "Klick zum Erforschen.",
+        overclockEffectHtml: "Effekt: Alle Shop-Items werden +10 % stärker.",
+        cost: "Kosten",
+        computerChipSingular: "Computerchip",
+        computerChipsPlural: "Chips",
+        clickSkill: "Klickwert verbessern",
+        clickSkillEffect: "Erhöht dein aktives Einkommen pro Klick.",
+        passiveSkill: "Passives Einkommen verbessern",
+        passiveSkillEffect: "Erhöht dein gesamtes passives Einkommen.",
+        chipSkill: "Chip-Ausbeute verbessern",
+        chipSkillEffectHtml: "Startwert: 1 Chip pro Geld-Meilenstein.<br>Jedes Level verdoppelt die Ausbeute.<br>1 / 2 / 4 / 8 / 16 / 32",
+        currentBonus: "Aktueller Bonus",
+        maxLevelGives: "Max-Level gibt",
+        required: "Benötigt",
+        chipBonusPerLevel: "Aktuelle Ausbeute",
+        skilltreeViewModeShort: "Ansichtsmodus: Du kannst den Forschungsbaum ansehen, aber noch keine Punkte verteilen.",
+        skilltreeViewMode: "Ansichtsmodus: Du kannst den Forschungsbaum ansehen, aber noch keine Punkte verteilen. Rebirth aktiviert die Punkteverteilung.",
+        skilltreeRebirthMode: "Rebirth aktiv: Verteile jetzt deine Computerchips im Forschungsbaum. Drücke danach unten auf „Neuen Run starten“.",
+        closeAfterStart: "Erst Start drücken",
+        close: "Schließen",
+        startNewRun: "Neuen Run starten",
+        activateRebirth: "Rebirth aktivieren",
+        viewSkilltree: "Skillbaum anschauen",
+        confirmRebirth: "Rebirth wirklich aktivieren?\n\nDein Geld, Shop, normale Upgrades und Klickzähler werden zurückgesetzt.\nDanach kannst du im Forschungsbaum Computerchips verteilen.\nErst wenn du auf „Neuen Run starten“ drückst, beginnt der nächste Run."
+      },
+      en: {
+        play: "Play",
+        settings: "Settings",
+        settingsUpper: "SETTINGS",
+        achievements: "Achievements",
+        quitGame: "Quit Game",
+        mainSettingsPlaceholder: "Placeholder for later: volume, graphics, effects, save options and more menu features.",
+        mainAchievementsPlaceholder: "Placeholder for future achievements, milestones and unlocked goals.",
+        escOpensMainMenu: "ESC opens this main menu.",
+        pauseTitle: "PAUSE",
+        resume: "Resume",
+        backToMainMenu: "Back to Main Menu",
+        escClosesPause: "ESC closes this menu.",
+        general: "General",
+        pauseSettingsPlaceholder: "Placeholder for future in-game settings.",
+        pauseAchievementsPlaceholder: "Placeholder for future achievements and milestones.",
+        savegame: "Savegame",
+        deleteSaveWarningHtml: "WARNING:<br>If you delete the savegame, money, shop, upgrades, research, chips and rebirth progress will be reset.<br>This action cannot be undone.",
+        deleteSave: "Delete Savegame",
+        back: "Back",
+        escBackToPause: "ESC back to pause menu.",
+        upgrades: "Upgrades",
+        research: "Research",
+        activateRebirth: "Activate Rebirth",
+        viewSkilltree: "View Skill Tree",
+        close: "Close",
+        startNewRun: "Start New Run",
+        closeAfterStart: "Press Start first",
+        skilltreeViewMode: "View mode: You can look at the research tree, but cannot spend points yet. Rebirth enables point spending.",
+        skilltreeRebirthMode: "Rebirth active: Spend your Computer Chips in the research tree. Then press 'Start New Run' below.",
+        bought: "Bought",
+        notBought: "Not bought",
+        clickPackage: "Click the Package",
+        clickTubeComputer: "Click the CRT Computer",
+        clickWorkstation: "Click the Workstation",
+        clickServerRack: "Click the Server Rack",
+        clickOfficeComplex: "Click the Office Complex",
+        clickMarketingDepartment: "Click the Marketing Department",
+        clickCustomerSupport: "Click Customer Support",
+        gigachipProduced: "GIGACHIP PRODUCED!",
+        turboClickMsg: "Turbo Click! ",
+        goldenMouseMsg: "Golden Mouse +{value} €!",
+        confirmTitle: "CONFIRM",
+        yes: "Yes",
+        no: "No",
+        confirmDeleteSave: "Really delete savegame?\n\nAll progress will be reset. This action cannot be undone.",
+        confirmRebirth: "Really activate Rebirth?\n\nYour money, shop, normal upgrades and click counter will be reset.\nAfter that you can spend Computer Chips in the research tree.\nThe next run starts only after you press 'Start New Run'.",
+        saved: "Saved.",
+        noSaveFound: "No savegame found.",
+        saveLoaded: "Savegame loaded.",
+        saveLoadError: "Savegame could not be loaded.",
+        saveDeleted: "Savegame deleted.",
+        shop: "Shop",
+        foundation: "Company Foundation",
+        foundationPlaceholder: "Placeholder for later company mechanics, founding levels and new business areas.",
+        openFoundation: "Open Company Foundation",
+        openShop: "Open Shop",
+        tubeComputer: "CRT Computer",
+        tubeComputers: "CRT Computers",
+        tubeComputerTooltip: "Gives +0.5 € passive income per second.",
+        workstation: "Workstation",
+        workstations: "Workstations",
+        workstationTooltipHtml: "Gives +5 € passive income per second.<br>With Workstation Boost: +50 €/s.",
+        serverRack: "Server Rack",
+        serverRacks: "Server Racks",
+        serverRackTooltip: "Gives +1,000 € passive income per second.",
+        officeComplex: "Office Complex",
+        officeComplexes: "Office Complexes",
+        officeComplexTooltip: "Gives +10,000 € passive income per second.",
+        marketingDepartment: "Marketing Department",
+        marketingDepartments: "Marketing Departments",
+        marketingDepartmentTooltip: "Gives +100,000 € passive income per second.",
+        customerSupport: "Customer Support",
+        customerSupportPlural: "Customer Support",
+        customerSupportTooltip: "Gives +1M € passive income per second.",
+        money: "Money",
+        computerChips: "Computer Chips",
+        gigachips: "Gigachips",
+        testMode: "Test Mode",
+        clickValue: "Click Value",
+        clicks: "Clicks",
+        workerClicks: "Worker Clicks",
+        turboClickChance: "Turbo Click Chance",
+        passiveIncome: "Passive Income",
+        shopBonus: "Shop Bonus from Overclocking",
+        clickResearch: "Click Research",
+        passiveResearch: "Passive Research",
+        chipsPerMilestone: "Chips per Money Milestone",
+        gigachipChance: "Gigachip Chance",
+        autosaveActive: "Autosave active",
+        betterMouse: "Better Mouse",
+        betterMouseTooltip: "Increases click value by +1 €.",
+        betterMice: "Better Mice",
+        goldenMouse: "Golden Mouse",
+        goldenMouseTooltip: "Every 10 clicks gives +5 € bonus per golden mouse.",
+        goldenMice: "Golden Mice",
+        turboClick: "Turbo Click",
+        turboClickTooltipHtml: "+10 % chance per level that a click counts twice.<br>Maximum 5 levels.",
+        level: "Level",
+        workstationBoost: "Workstation Boost",
+        workstationBoostTooltip: "One-time purchase: Workstations produce x10 passive income.",
+        worker: "Worker",
+        workerTooltipHtml: "Automatically clicks for you.<br>+0.5 clicks per second per level.<br>Maximum 10 levels.",
+        workerAutomationSkill: "Worker Automation",
+        workerAutomationSkillEffect: "Increases your workers' click rate by +15% per level.",
+        companyStarterSkill: "Company Starter",
+        companyStarterSkillEffectHtml: "Improves your start after rebirth.<br>With each level, your new run automatically starts with one more early shop item.",
+        nextLevel: "Next level",
+        companyStarterNoBonus: "No start bonus",
+        companyStarterLevel1: "Start with 1 CRT Computer",
+        companyStarterLevel2: "Start with 1 CRT Computer and 1 Workstation",
+        companyStarterLevel3: "Start with 1 CRT Computer, 1 Workstation and 1 Server Rack",
+        companyStarterLevel4: "Start with 1 CRT Computer, 1 Workstation, 1 Server Rack and 1 Office Complex",
+        companyStarterLevel5: "Start with 1 CRT Computer, 1 Workstation, 1 Server Rack, 1 Office Complex and 1 Marketing Department",
+        companyStarterNextLevel1: "CRT Computer",
+        companyStarterNextLevel2: "Workstation",
+        companyStarterNextLevel3: "Server Rack",
+        companyStarterNextLevel4: "Office Complex",
+        companyStarterNextLevel5: "Marketing Department",
+        startCapitalSkill: "Starting Capital",
+        startCapitalSkillEffectHtml: "New runs start after rebirth with additional money.",
+        startCapitalNextLevel1: "1K €",
+        startCapitalNextLevel2: "10K €",
+        startCapitalNextLevel3: "100K €",
+        startCapitalNextLevel4: "1M €",
+        startCapitalNextLevel5: "10M €",
+        scaleEffectsSkill: "Scale Effects",
+        scaleEffectsSkillEffectHtml: "The more you own of a shop item, the stronger that category produces.",
+        perItem: "per item",
+        fastHands: "Fast Hands",
+        fastHandsTooltipHtml: "One-time purchase: Every manual click and every worker click gains +5% of your passive income as a bonus. Click research only boosts manual clicks.",
+        fastHandsBonus: "Fast Hands Bonus",
+        status: "Status",
+        comingSoon: "Coming Soon",
+        notAvailable: "Not available yet",
+        shopPlaceholderTooltip: "Placeholder for a later shop item.",
+        upgradePlaceholderTooltip: "Placeholder for a later upgrade.",
+        shopSlot: "Shop Slot {value}",
+        upgradeSlot: "Upgrade Slot {value}",
+        reincarnation: "Rebirth",
+        reincarnationInfo: "Use Computer Chips to buy permanent bonuses in the research tree.",
+        rebirthWarningHtml: "WARNING:<br>Activating Rebirth resets your current progress. Permanent research bonuses remain later.",
+        skilltree: "Research Tree",
+        overclock: "Overclocking",
+        clickToResearch: "Click to research.",
+        overclockEffectHtml: "Effect: All shop items become +10 % stronger.",
+        cost: "Cost",
+        computerChipSingular: "Computer Chip",
+        computerChipsPlural: "Chips",
+        clickSkill: "Improve Click Value",
+        clickSkillEffect: "Increases your active income per click.",
+        passiveSkill: "Improve Passive Income",
+        passiveSkillEffect: "Increases your total passive income.",
+        chipSkill: "Improve Chip Yield",
+        chipSkillEffectHtml: "Base value: 1 chip per money milestone.<br>Each level doubles the yield.<br>1 / 2 / 4 / 8 / 16 / 32",
+        currentBonus: "Current bonus",
+        maxLevelGives: "Max level gives",
+        required: "Requires",
+        chipBonusPerLevel: "Current yield",
+        skilltreeViewModeShort: "View mode: You can look at the research tree, but cannot spend points yet.",
+        skilltreeViewMode: "View mode: You can look at the research tree, but cannot spend points yet. Rebirth enables point spending.",
+        skilltreeRebirthMode: "Rebirth active: Spend your Computer Chips in the research tree. Then press “Start New Run” below.",
+        closeAfterStart: "Press Start first",
+        close: "Close",
+        startNewRun: "Start New Run",
+        activateRebirth: "Activate Rebirth",
+        viewSkilltree: "View Skill Tree",
+        confirmRebirth: "Really activate Rebirth?\n\nYour money, shop, normal upgrades and click counter will be reset.\nAfter that you can spend Computer Chips in the research tree.\nThe next run starts only after you press “Start New Run”."
+      }
+    };
+
+    let currentLanguage = localStorage.getItem("techIdleLanguage") || "de";
+
+    function t(key, values = {}) {
+      const dict = translations[currentLanguage] || translations.de;
+      let text = dict[key] ?? translations.de[key] ?? key;
+      Object.keys(values).forEach((valueKey) => {
+        text = text.replaceAll("{" + valueKey + "}", values[valueKey]);
+      });
+      return text;
+    }
+
+    function showConfirmDialog(message, title = t("confirmTitle")) {
+      const overlay = document.getElementById("confirmDialogOverlay");
+      const titleElement = document.getElementById("confirmDialogTitle");
+      const messageElement = document.getElementById("confirmDialogMessage");
+      const yesButton = document.getElementById("confirmDialogYesButton");
+      const noButton = document.getElementById("confirmDialogNoButton");
+
+      titleElement.textContent = title;
+      messageElement.textContent = message;
+      yesButton.textContent = t("yes");
+      noButton.textContent = t("no");
+
+      overlay.classList.remove("hidden");
+      yesButton.focus();
+
+      return new Promise((resolve) => {
+        const closeDialog = (result) => {
+          overlay.classList.add("hidden");
+          yesButton.onclick = null;
+          noButton.onclick = null;
+          document.removeEventListener("keydown", onDialogKeydown);
+          resolve(result);
+        };
+
+        const onDialogKeydown = (event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            closeDialog(false);
+          }
+        };
+
+        yesButton.onclick = () => closeDialog(true);
+        noButton.onclick = () => closeDialog(false);
+        document.addEventListener("keydown", onDialogKeydown);
+      });
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = currentLanguage;
+
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        const value = t(key);
+
+        if (key.toLowerCase().includes("html")) {
+          element.innerHTML = value;
+        } else {
+          element.textContent = value;
+        }
+      });
+
+      document.querySelectorAll("[data-i18n-template]").forEach((element) => {
+        const key = element.getAttribute("data-i18n-template");
+        const value = element.getAttribute("data-i18n-value");
+        element.textContent = t(key, { value });
+      });
+
+    document.querySelectorAll("[data-language-button]").forEach((button) => {
+        button.classList.toggle("active-language", button.getAttribute("data-language-button") === currentLanguage);
+      });
+
+      if (typeof updateWorkArea === "function") {
+        updateWorkArea();
+      }
+
+      if (typeof updateSkillTreeModeUI === "function") {
+        updateSkillTreeModeUI();
+      }
+
+      if (typeof updateSkillDisplays === "function") {
+        updateSkillDisplays();
+      }
+
+      if (typeof updateShopTabs === "function") {
+        updateShopTabs();
+      }
+    }
+
+    function setLanguage(language) {
+      currentLanguage = language;
+      localStorage.setItem("techIdleLanguage", currentLanguage);
+      applyLanguage();
+    }
+
+    // =========================
+    // SPIELWERTE / RESSOURCEN
+    // =========================
+    let money = 0;
+    let chips = 0;
+    let gigachips = 0;
+    let highestChipMilestoneClaimed = 0;
+
+    // =========================
+    // SHOP
+    // =========================
+    let computerCount = 0;
+    let computerCost = 100;
+
+    let workstationCount = 0;
+    let workstationCost = 2500;
+
+    let serverRackCount = 0;
+    let serverRackCost = 50000;
+
+    let officeComplexCount = 0;
+    let officeComplexCost = 500000;
+
+    let marketingDepartmentCount = 0;
+    let marketingDepartmentCost = 10000000;
+
+    let customerSupportCount = 0;
+    let customerSupportCost = 150000000;
+
+    // =========================
+    // UPGRADES
+    // =========================
+    let betterMouseCount = 0;
+    let betterMouseCost = 25;
+
+    let goldenMouseCount = 0;
+    let goldenMouseCost = 200;
+
+    let turboClickLevel = 0;
+    let turboClickCost = 500;
+
+    let workstationBoostBought = false;
+    let workstationBoostCost = 10000;
+
+    let workerLevel = 0;
+    let workerCost = 1000000;
+    let workerClickProgress = 0;
+
+    let fastHandsBought = false;
+    let fastHandsCost = 50000000;
+    const fastHandsPassiveClickBonusRate = 0.05;
+
+    let clickCounter = 0;
+
+    // =========================
+    // FORSCHUNG / REBIRTH
+    // =========================
+    let overclockBought = false;
+    let clickSkillLevel = 0;
+    let passiveSkillLevel = 0;
+    let chipSkillLevel = 0;
+    let workerAutomationSkillLevel = 0;
+    let companyStarterSkillLevel = 0;
+    let startCapitalSkillLevel = 0;
+    let scaleEffectsSkillLevel = 0;
+
+    let activeTab = "upgrades";
+    let activeShopTab = "shop";
+    let skillTreeMode = "view";
+    let rebirthPending = false;
+    let currentWorkAsset = null;
+    let currentWorkUsesLargeImage = false;
+    let mainMenuOpen = true;
+    let pauseMenuOpen = false;
+
+    const testMoney = 1e15;
+    const testChips = 100000;
+
+    const maxUpgradeCount = 100;
+    const maxTurboClickLevel = 5;
+    const maxWorkerLevel = 10;
+
+    const priceMultiplier = 1.10;
+    const turboClickPriceMultiplier = 1.15;
+
+    const firstChipMilestone = 100000;
+    const chipMilestoneSystemVersion = 2;
+    const maxSkillLevel = 5;
+    const maxWorkerAutomationSkillLevel = 5;
+    const workerAutomationBonusPerLevel = 0.15;
+    const maxCompanyStarterSkillLevel = 5;
+    const companyStarterSkillCosts = [25, 50, 100, 200, 400];
+    const maxStartCapitalSkillLevel = 5;
+    const startCapitalSkillCosts = [20, 50, 125, 300, 750];
+    const startCapitalAmounts = [1000, 10000, 100000, 1000000, 10000000];
+    const maxScaleEffectsSkillLevel = 5;
+    const scaleEffectsBonusPerItemPerLevel = 0.0005;
+    const scaleEffectsSkillCosts = [20, 40, 80, 160, 320];
+    const baseGigachipDropChance = 0.0001; // 0,01 % pro Sekunde bei aktivem passivem Einkommen
+
+    const researchBonusByLevel = [0, 0.5, 1, 1.5, 2, 2.5];
+
+    function getShopMultiplier() {
+      return overclockBought ? 1.10 : 1;
+    }
+
+    function getClickResearchMultiplier() {
+      return 1 + researchBonusByLevel[clickSkillLevel];
+    }
+
+    function getPassiveResearchMultiplier() {
+      return 1 + researchBonusByLevel[passiveSkillLevel];
+    }
+
+    function getChipsPerMilestone() {
+      return Math.pow(2, chipSkillLevel);
+    }
+
+    function getReachedChipMilestoneCount(currentMoney = money) {
+      if (currentMoney < firstChipMilestone) {
+        return 0;
+      }
+
+      let milestoneValue = firstChipMilestone;
+      let reachedMilestones = 0;
+      let nextMultiplier = 5;
+
+      while (currentMoney >= milestoneValue && Number.isFinite(milestoneValue)) {
+        reachedMilestones++;
+        milestoneValue *= nextMultiplier;
+        nextMultiplier = nextMultiplier === 5 ? 2 : 5;
+      }
+
+      return reachedMilestones;
+    }
+
+    function getBaseClickValue() {
+      return 1 + betterMouseCount;
+    }
+
+    function getWorkstationIncomePerSecond() {
+      return workstationBoostBought ? 50 : 5;
+    }
+
+    function getWorkerAutomationMultiplier() {
+      return 1 + (workerAutomationSkillLevel * workerAutomationBonusPerLevel);
+    }
+
+    function getWorkerClicksPerSecond() {
+      return workerLevel * 0.5 * getWorkerAutomationMultiplier();
+    }
+
+    function getFastHandsClickBonus() {
+      return fastHandsBought ? getIncome() * fastHandsPassiveClickBonusRate : 0;
+    }
+
+    function getScaleEffectsMultiplier(itemCount) {
+      return 1 + (itemCount * scaleEffectsSkillLevel * scaleEffectsBonusPerItemPerLevel);
+    }
+
+    function getBaseIncome() {
+      const shopIncome =
+        (computerCount * 0.5 * getScaleEffectsMultiplier(computerCount)) +
+        (workstationCount * getWorkstationIncomePerSecond() * getScaleEffectsMultiplier(workstationCount)) +
+        (serverRackCount * 1000 * getScaleEffectsMultiplier(serverRackCount)) +
+        (officeComplexCount * 10000 * getScaleEffectsMultiplier(officeComplexCount)) +
+        (marketingDepartmentCount * 100000 * getScaleEffectsMultiplier(marketingDepartmentCount)) +
+        (customerSupportCount * 1000000 * getScaleEffectsMultiplier(customerSupportCount));
+
+      return shopIncome * getShopMultiplier();
+    }
+
+    function getManualClickValue() {
+      return getBaseClickValue() * getClickResearchMultiplier();
+    }
+
+    function getWorkerClickValue() {
+      return getBaseClickValue();
+    }
+
+    function getClickValue() {
+      return getManualClickValue() + getFastHandsClickBonus();
+    }
+
+    function getIncome() {
+      return getBaseIncome() * getPassiveResearchMultiplier();
+    }
+
+    function getGoldenMouseBonus() {
+      return goldenMouseCount * 5;
+    }
+
+    function getTurboClickChance() {
+      return turboClickLevel * 10;
+    }
+
+    function didTurboClickTrigger() {
+      return Math.random() < getTurboClickChance() / 100;
+    }
+
+    function getClickSkillCost() {
+      return 5 * Math.pow(2, clickSkillLevel);
+    }
+
+    function getPassiveSkillCost() {
+      return 5 * Math.pow(2, passiveSkillLevel);
+    }
+
+    function getWorkerAutomationSkillCost() {
+      return 10 * Math.pow(2, workerAutomationSkillLevel);
+    }
+
+    function getCompanyStarterSkillCost() {
+      return companyStarterSkillCosts[companyStarterSkillLevel] ?? Infinity;
+    }
+
+    function getCompanyStarterCurrentEffectText() {
+      const clampedLevel = Math.min(Math.max(companyStarterSkillLevel, 0), maxCompanyStarterSkillLevel);
+      return clampedLevel <= 0 ? t("companyStarterNoBonus") : t("companyStarterLevel" + clampedLevel);
+    }
+
+    function getCompanyStarterNextEffectText() {
+      const nextLevel = companyStarterSkillLevel + 1;
+      return nextLevel > maxCompanyStarterSkillLevel ? "MAX" : t("companyStarterNextLevel" + nextLevel);
+    }
+
+    function getStartCapitalSkillCost() {
+      return startCapitalSkillCosts[startCapitalSkillLevel] ?? Infinity;
+    }
+
+    function getStartCapitalAmount() {
+      return startCapitalAmounts[startCapitalSkillLevel - 1] ?? 0;
+    }
+
+    function getStartCapitalNextEffectText() {
+      const nextLevel = startCapitalSkillLevel + 1;
+      return nextLevel > maxStartCapitalSkillLevel ? "MAX" : t("startCapitalNextLevel" + nextLevel);
+    }
+
+    function getScaleEffectsSkillCost() {
+      return scaleEffectsSkillCosts[scaleEffectsSkillLevel] ?? Infinity;
+    }
+
+    function getChipSkillCost() {
+      return 10 * Math.pow(2, chipSkillLevel);
+    }
+
+    function setSaveStatus(text) {
+      document.getElementById("saveStatus").textContent = text;
+    }
+
+    function saveGame() {
+      const saveData = {
+        chipMilestoneSystemVersion,
+        money, chips, gigachips, highestChipMilestoneClaimed,
+        computerCount, computerCost,
+        workstationCount, workstationCost,
+        serverRackCount, serverRackCost,
+        officeComplexCount, officeComplexCost,
+        marketingDepartmentCount, marketingDepartmentCost,
+        customerSupportCount, customerSupportCost,
+        betterMouseCount, betterMouseCost,
+        goldenMouseCount, goldenMouseCost,
+        turboClickLevel, turboClickCost,
+        workstationBoostBought, workstationBoostCost,
+        workerLevel, workerCost, workerClickProgress,
+        fastHandsBought, fastHandsCost,
+        clickCounter,
+        overclockBought,
+        clickSkillLevel, passiveSkillLevel, chipSkillLevel, workerAutomationSkillLevel, companyStarterSkillLevel, startCapitalSkillLevel, scaleEffectsSkillLevel,
+        activeTab, rebirthPending
+      };
+
+      localStorage.setItem(saveKey, JSON.stringify(saveData));
+      setSaveStatus(t("saved"));
+    }
+
+    function loadGame() {
+      const savedData = localStorage.getItem(saveKey);
+
+      if (!savedData) {
+        setSaveStatus(t("noSaveFound"));
+        return;
+      }
+
+      try {
+        const data = JSON.parse(savedData);
+
+        money = data.money ?? 0;
+        chips = data.chips ?? 0;
+        gigachips = data.gigachips ?? 0;
+        highestChipMilestoneClaimed = data.highestChipMilestoneClaimed ?? 0;
+
+        const reachedChipMilestones = getReachedChipMilestoneCount(money);
+        if ((data.chipMilestoneSystemVersion ?? 1) < chipMilestoneSystemVersion) {
+          highestChipMilestoneClaimed = Math.min(highestChipMilestoneClaimed, reachedChipMilestones);
+          chips = Math.min(chips, reachedChipMilestones);
+        }
+
+        computerCount = data.computerCount ?? 0;
+        computerCost = data.computerCost ?? 100;
+
+        workstationCount = data.workstationCount ?? 0;
+        workstationCost = data.workstationCost ?? 2500;
+
+        serverRackCount = data.serverRackCount ?? 0;
+        serverRackCost = data.serverRackCost ?? 50000;
+
+        officeComplexCount = data.officeComplexCount ?? 0;
+        officeComplexCost = data.officeComplexCost ?? 500000;
+
+        marketingDepartmentCount = data.marketingDepartmentCount ?? 0;
+        marketingDepartmentCost = data.marketingDepartmentCost ?? 10000000;
+
+        customerSupportCount = data.customerSupportCount ?? 0;
+        customerSupportCost = data.customerSupportCost ?? 150000000;
+
+        betterMouseCount = data.betterMouseCount ?? 0;
+        betterMouseCost = data.betterMouseCost ?? 25;
+
+        goldenMouseCount = data.goldenMouseCount ?? 0;
+        goldenMouseCost = data.goldenMouseCost ?? 200;
+
+        turboClickLevel = data.turboClickLevel ?? 0;
+        turboClickCost = data.turboClickCost ?? 500;
+
+        workstationBoostBought = data.workstationBoostBought ?? false;
+        workstationBoostCost = data.workstationBoostCost ?? 10000;
+
+        workerLevel = data.workerLevel ?? 0;
+        workerCost = data.workerCost ?? 1000000;
+        workerClickProgress = data.workerClickProgress ?? 0;
+
+        fastHandsBought = data.fastHandsBought ?? false;
+        fastHandsCost = data.fastHandsCost ?? 50000000;
+
+        clickCounter = data.clickCounter ?? 0;
+
+        overclockBought = data.overclockBought ?? false;
+        clickSkillLevel = data.clickSkillLevel ?? 0;
+        passiveSkillLevel = data.passiveSkillLevel ?? 0;
+        chipSkillLevel = data.chipSkillLevel ?? 0;
+        workerAutomationSkillLevel = data.workerAutomationSkillLevel ?? 0;
+        companyStarterSkillLevel = data.companyStarterSkillLevel ?? 0;
+        startCapitalSkillLevel = data.startCapitalSkillLevel ?? 0;
+        scaleEffectsSkillLevel = data.scaleEffectsSkillLevel ?? 0;
+
+        activeTab = data.activeTab ?? "upgrades";
+        rebirthPending = data.rebirthPending ?? false;
+        skillTreeMode = rebirthPending ? "rebirth" : "view";
+        setSaveStatus(t("saveLoaded"));
+      } catch (error) {
+        setSaveStatus(t("saveLoadError"));
+      }
+    }
+
+    function deleteSave() {
+      localStorage.removeItem(saveKey);
+      money = 0;
+      chips = 0;
+      gigachips = 0;
+      highestChipMilestoneClaimed = 0;
+
+      computerCount = 0;
+      computerCost = 100;
+
+      workstationCount = 0;
+      workstationCost = 2500;
+
+      serverRackCount = 0;
+      serverRackCost = 50000;
+
+      officeComplexCount = 0;
+      officeComplexCost = 500000;
+
+      marketingDepartmentCount = 0;
+      marketingDepartmentCost = 10000000;
+
+      customerSupportCount = 0;
+      customerSupportCost = 150000000;
+
+      betterMouseCount = 0;
+      betterMouseCost = 25;
+
+      goldenMouseCount = 0;
+      goldenMouseCost = 200;
+
+      turboClickLevel = 0;
+      turboClickCost = 500;
+
+      workstationBoostBought = false;
+      workstationBoostCost = 10000;
+
+      workerLevel = 0;
+      workerCost = 1000000;
+      workerClickProgress = 0;
+
+      fastHandsBought = false;
+      fastHandsCost = 50000000;
+
+      clickCounter = 0;
+
+      overclockBought = false;
+      clickSkillLevel = 0;
+      passiveSkillLevel = 0;
+      chipSkillLevel = 0;
+      workerAutomationSkillLevel = 0;
+      companyStarterSkillLevel = 0;
+      startCapitalSkillLevel = 0;
+      scaleEffectsSkillLevel = 0;
+
+      activeTab = "upgrades";
+      skillTreeMode = "view";
+      rebirthPending = false;
+      currentWorkAsset = null;
+      currentWorkUsesLargeImage = false;
+      document.getElementById("testToggle").checked = false;
+
+      setSaveStatus(t("saveDeleted"));
+      update();
+    }
+
+    function checkChipMilestones() {
+      const reachedChipMilestones = getReachedChipMilestoneCount(money);
+
+      if (reachedChipMilestones > highestChipMilestoneClaimed) {
+        const newMilestones = reachedChipMilestones - highestChipMilestoneClaimed;
+        chips += newMilestones * getChipsPerMilestone();
+        highestChipMilestoneClaimed = reachedChipMilestones;
+      }
+    }
+
+    // =========================
+    // GIGACHIPS
+    // =========================
+    function getGigachipDropChance() {
+      return baseGigachipDropChance;
+    }
+
+    function rollGigachipDrop() {
+      if (getIncome() <= 0) {
+        return;
+      }
+
+      if (Math.random() < getGigachipDropChance()) {
+        gigachips++;
+        showBonusMessage(t("gigachipProduced"));
+        document.getElementById("bonusFlash").classList.add("gigachip-flash");
+
+        setTimeout(() => {
+          document.getElementById("bonusFlash").classList.remove("gigachip-flash");
+        }, 1200);
+      }
+    }
+
+    function updateTabs() {
+      document.getElementById("upgradesTab").classList.toggle("hidden", activeTab !== "upgrades");
+      document.getElementById("researchTab").classList.toggle("hidden", activeTab !== "research");
+
+      document.getElementById("upgradesTabButton").classList.toggle("active-tab", activeTab === "upgrades");
+      document.getElementById("researchTabButton").classList.toggle("active-tab", activeTab === "research");
+      updateShopTabs();
+    }
+
+    function updateShopTabs() {
+      document.getElementById("shopItemsTab").classList.toggle("hidden", activeShopTab !== "shop");
+      document.getElementById("foundationTab").classList.toggle("hidden", activeShopTab !== "foundation");
+      document.getElementById("openFoundationTabButton").classList.toggle("hidden", activeShopTab === "foundation");
+      document.getElementById("openShopTabButton").classList.toggle("hidden", activeShopTab === "shop");
+      document.getElementById("shopPanelTitle").textContent = activeShopTab === "foundation" ? t("foundation") : t("shop");
+      document.getElementById("openFoundationTabButton").title = t("openFoundation");
+      document.getElementById("openFoundationTabButton").setAttribute("aria-label", t("openFoundation"));
+      document.getElementById("openShopTabButton").title = t("openShop");
+      document.getElementById("openShopTabButton").setAttribute("aria-label", t("openShop"));
+    }
+
+    function clearWorkAreaBackground() {
+      const slot = document.querySelector(".work-display-slot");
+
+      if (!slot) {
+        return;
+      }
+
+      slot.classList.remove("has-work-background");
+      slot.style.setProperty("--work-bg-image", "none");
+    }
+
+    function loadLargeWorkBackground(assetName, onSuccess, onError) {
+      const backgroundPaths = [
+        "assets/work-backgrounds/work-" + assetName + ".png",
+        "assets/work-backgrounds/" + assetName + "-bg.png"
+      ];
+      let pathIndex = 0;
+
+      const tryNextPath = () => {
+        if (pathIndex >= backgroundPaths.length) {
+          onError();
+          return;
+        }
+
+        const path = backgroundPaths[pathIndex];
+        pathIndex++;
+
+        const backgroundImage = new Image();
+        backgroundImage.onload = () => onSuccess(path);
+        backgroundImage.onerror = tryNextPath;
+        backgroundImage.src = path;
+      };
+
+      tryNextPath();
+    }
+
+    function setWorkAreaAsset(assetName, placeholder, label, useLargeWorkImage = false) {
+      const img = document.getElementById("workDisplayImg");
+      const placeholderEl = document.getElementById("workDisplayPlaceholder");
+      const slot = document.querySelector(".work-display-slot");
+
+      if (currentWorkAsset === assetName && currentWorkUsesLargeImage === useLargeWorkImage) {
+        placeholderEl.textContent = placeholder;
+        img.alt = label;
+        return;
+      }
+
+      currentWorkAsset = assetName;
+      currentWorkUsesLargeImage = useLargeWorkImage;
+      placeholderEl.textContent = placeholder;
+      img.alt = label;
+
+      const smallAssetFolder = assetName === "paket" ? "assets/work-backgrounds/" : "assets/shop-icons/";
+      const nextSrc = smallAssetFolder + assetName + ".png";
+
+      const showSmallWorkImage = () => {
+        clearWorkAreaBackground();
+
+        img.onload = () => {
+          img.style.display = "block";
+          placeholderEl.style.display = "none";
+        };
+
+        img.onerror = () => {
+          img.style.display = "none";
+          placeholderEl.style.display = "block";
+        };
+
+        img.style.display = "none";
+        placeholderEl.style.display = "block";
+        img.src = nextSrc;
+
+        if (img.complete && img.naturalWidth > 0) {
+          img.style.display = "block";
+          placeholderEl.style.display = "none";
+        }
+      };
+
+      if (!useLargeWorkImage || !slot) {
+        showSmallWorkImage();
+        return;
+      }
+
+      img.style.display = "none";
+      placeholderEl.style.display = "none";
+
+      loadLargeWorkBackground(
+        assetName,
+        (backgroundPath) => {
+          slot.style.setProperty("--work-bg-image", "url('" + backgroundPath + "')");
+          slot.classList.add("has-work-background");
+        },
+        showSmallWorkImage
+      );
+    }
+
+    function updateWorkArea() {
+      if (customerSupportCount >= 1) {
+        setWorkAreaAsset("kundenservice", "🎧", "Kundenservice", true);
+        document.getElementById("workText").textContent = t("clickCustomerSupport");
+        return;
+      }
+
+      if (marketingDepartmentCount >= 1) {
+        setWorkAreaAsset("marketingabteilung", "📣", "Marketingabteilung", true);
+        document.getElementById("workText").textContent = t("clickMarketingDepartment");
+        return;
+      }
+
+      if (officeComplexCount >= 1) {
+        setWorkAreaAsset("buerokomplex", "🏢", "Bürokomplex", true);
+        document.getElementById("workText").textContent = t("clickOfficeComplex");
+        return;
+      }
+
+      if (serverRackCount >= 1) {
+        setWorkAreaAsset("serverschrank", "🗄️", "Serverschrank");
+        document.getElementById("workText").textContent = t("clickServerRack");
+        return;
+      }
+
+      if (workstationCount >= 1) {
+        setWorkAreaAsset("arbeitsstation", "🖥️", "Arbeitsstation");
+        document.getElementById("workText").textContent = t("clickWorkstation");
+        return;
+      }
+
+      if (computerCount >= 1) {
+        setWorkAreaAsset("roehrcomputer", "🖥️", "Röhrencomputer");
+        document.getElementById("workText").textContent = t("clickTubeComputer");
+        return;
+      }
+
+      setWorkAreaAsset("paket", "📦", "Paket");
+      document.getElementById("workText").textContent = t("clickPackage");
+    }
+
+    function formatShortNumber(value) {
+      const suffixes = [
+        { value: 1, suffix: "" },
+        { value: 1e3, suffix: "K" },
+        { value: 1e6, suffix: "M" },
+        { value: 1e9, suffix: "B" },
+        { value: 1e12, suffix: "T" },
+        { value: 1e15, suffix: "QD" },
+        { value: 1e18, suffix: "QN" }
+      ];
+
+      if (!Number.isFinite(value)) {
+        return "0";
+      }
+
+      const absoluteValue = Math.abs(value);
+
+      if (absoluteValue < 1000) {
+        return value.toFixed(0);
+      }
+
+      let suffixIndex = 0;
+      for (let index = suffixes.length - 1; index >= 0; index--) {
+        if (absoluteValue >= suffixes[index].value) {
+          suffixIndex = index;
+          break;
+        }
+      }
+
+      let shortened = value / suffixes[suffixIndex].value;
+      let decimals = Math.abs(shortened) >= 100 ? 0 : Math.abs(shortened) >= 10 ? 1 : 2;
+      let roundedText = shortened.toFixed(decimals);
+      let roundedNumber = Number(roundedText);
+
+      while (Math.abs(roundedNumber) >= 1000 && suffixIndex < suffixes.length - 1) {
+        suffixIndex++;
+        shortened = value / suffixes[suffixIndex].value;
+        decimals = Math.abs(shortened) >= 100 ? 0 : Math.abs(shortened) >= 10 ? 1 : 2;
+        roundedText = shortened.toFixed(decimals);
+        roundedNumber = Number(roundedText);
+      }
+
+      return roundedText.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1") + suffixes[suffixIndex].suffix;
+    }
+
+    function formatClickIncomeAmount(value) {
+      return formatShortNumber(value);
+    }
+
+    function showClickIncomePopup(amount, event) {
+      const workArea = document.getElementById("workArea");
+      const layer = document.getElementById("clickEffectLayer");
+
+      if (!workArea || !layer || amount <= 0) {
+        return;
+      }
+
+      const areaRect = workArea.getBoundingClientRect();
+      const popup = document.createElement("span");
+      popup.className = "click-income-popup";
+      popup.textContent = "+" + formatClickIncomeAmount(amount) + " €";
+
+      const fallbackX = areaRect.width / 2;
+      const fallbackY = areaRect.height / 2;
+      const rawX = event ? event.clientX - areaRect.left : fallbackX;
+      const rawY = event ? event.clientY - areaRect.top : fallbackY;
+      const safePaddingX = 54;
+      const safePaddingY = 32;
+      const x = Math.min(Math.max(rawX, safePaddingX), areaRect.width - safePaddingX);
+      const y = Math.min(Math.max(rawY, safePaddingY), areaRect.height - safePaddingY);
+
+      popup.style.left = x + "px";
+      popup.style.top = y + "px";
+
+      layer.appendChild(popup);
+      popup.addEventListener("animationend", () => popup.remove(), { once: true });
+    }
+
+    function showBonusMessage(text) {
+      document.getElementById("bonusFlash").textContent = text;
+      setTimeout(() => {
+        document.getElementById("bonusFlash").textContent = "";
+      }, 700);
+    }
+
+    function updateSkillDisplays() {
+      document.getElementById("shopBonus").textContent = overclockBought ? 10 : 0;
+      document.getElementById("clickBonus").textContent = researchBonusByLevel[clickSkillLevel] * 100;
+      document.getElementById("passiveBonus").textContent = researchBonusByLevel[passiveSkillLevel] * 100;
+      document.getElementById("clickSkillCurrentBonus").textContent = researchBonusByLevel[clickSkillLevel] * 100;
+      document.getElementById("passiveSkillCurrentBonus").textContent = researchBonusByLevel[passiveSkillLevel] * 100;
+      document.getElementById("workerAutomationSkillCurrentBonus").textContent = Math.round(workerAutomationSkillLevel * workerAutomationBonusPerLevel * 100);
+      document.getElementById("companyStarterNextEffect").textContent = getCompanyStarterNextEffectText();
+      document.getElementById("startCapitalNextEffect").textContent = getStartCapitalNextEffectText();
+      document.getElementById("scaleEffectsCurrentBonus").textContent = (scaleEffectsSkillLevel * scaleEffectsBonusPerItemPerLevel * 100).toFixed(2);
+      document.getElementById("chipsPerMilestone").textContent = getChipsPerMilestone();
+      document.getElementById("chipSkillCurrentYield").textContent = formatShortNumber(getChipsPerMilestone());
+      updateSkillTreeModeUI();
+
+      const overclockSkill = document.getElementById("overclockSkill");
+      const overclockStatus = document.getElementById("overclockStatus");
+
+      if (overclockBought) {
+        overclockSkill.classList.add("active");
+        overclockSkill.classList.add("maxed");
+        overclockStatus.textContent = t("bought");
+      } else {
+        overclockSkill.classList.remove("active");
+        overclockSkill.classList.remove("maxed");
+        overclockStatus.textContent = t("notBought");
+      }
+
+      const branchesUnlocked = overclockBought;
+
+      updateLevelSkill("companyStarterSkill", "companyStarterSkillLevel", "companyStarterSkillCost", companyStarterSkillLevel, getCompanyStarterSkillCost(), branchesUnlocked, maxCompanyStarterSkillLevel);
+      updateLevelSkill("startCapitalSkill", "startCapitalSkillLevel", "startCapitalSkillCost", startCapitalSkillLevel, getStartCapitalSkillCost(), branchesUnlocked, maxStartCapitalSkillLevel);
+      updateLevelSkill("clickSkill", "clickSkillLevel", "clickSkillCost", clickSkillLevel, getClickSkillCost(), branchesUnlocked);
+      updateLevelSkill("workerAutomationSkill", "workerAutomationSkillLevel", "workerAutomationSkillCost", workerAutomationSkillLevel, getWorkerAutomationSkillCost(), branchesUnlocked && clickSkillLevel > 0, maxWorkerAutomationSkillLevel);
+      updateLevelSkill("passiveSkill", "passiveSkillLevel", "passiveSkillCost", passiveSkillLevel, getPassiveSkillCost(), branchesUnlocked);
+      updateLevelSkill("scaleEffectsSkill", "scaleEffectsSkillLevel", "scaleEffectsSkillCost", scaleEffectsSkillLevel, getScaleEffectsSkillCost(), branchesUnlocked && passiveSkillLevel > 0, maxScaleEffectsSkillLevel);
+      updateLevelSkill("chipSkill", "chipSkillLevel", "chipSkillCost", chipSkillLevel, getChipSkillCost(), branchesUnlocked);
+    }
+
+
+    function updateLevelSkill(skillId, levelId, costId, level, cost, unlocked, levelCap = maxSkillLevel) {
+      const skillBox = document.getElementById(skillId);
+
+      document.getElementById(levelId).textContent = level;
+
+      if (!unlocked) {
+        skillBox.classList.add("locked");
+        skillBox.classList.remove("active");
+        skillBox.classList.remove("maxed");
+        document.getElementById(costId).textContent = formatShortNumber(cost);
+        return;
+      }
+
+      skillBox.classList.remove("locked");
+
+      if (level >= levelCap) {
+        document.getElementById(costId).textContent = "MAX";
+        skillBox.classList.add("maxed");
+        skillBox.classList.remove("active");
+        return;
+      }
+
+      document.getElementById(costId).textContent = formatShortNumber(cost);
+      skillBox.classList.toggle("active", level > 0);
+      skillBox.classList.remove("maxed");
+    }
+
+    function update() {
+      checkChipMilestones();
+
+      document.getElementById("money").textContent = formatShortNumber(money);
+      document.getElementById("chips").textContent = formatShortNumber(chips);
+      document.getElementById("gigachips").textContent = formatShortNumber(gigachips);
+      document.getElementById("reincarnationChips").textContent = formatShortNumber(chips);
+
+      document.getElementById("clickValue").textContent = formatShortNumber(getClickValue());
+      document.getElementById("fastHandsClickBonus").textContent = formatShortNumber(getFastHandsClickBonus());
+      document.getElementById("clickCounter").textContent = formatShortNumber(clickCounter);
+      document.getElementById("turboChance").textContent = getTurboClickChance();
+      document.getElementById("income").textContent = formatShortNumber(getIncome());
+      document.getElementById("gigachipChance").textContent = (getGigachipDropChance() * 100).toFixed(2);
+
+      document.getElementById("compCost").textContent = formatShortNumber(computerCost);
+      document.getElementById("compCount").textContent = computerCount;
+
+      document.getElementById("wsCost").textContent = formatShortNumber(workstationCost);
+      document.getElementById("wsCount").textContent = workstationCount;
+
+      document.getElementById("serverRackCost").textContent = formatShortNumber(serverRackCost);
+      document.getElementById("serverRackCount").textContent = serverRackCount;
+
+      document.getElementById("officeComplexCost").textContent = formatShortNumber(officeComplexCost);
+      document.getElementById("officeComplexCount").textContent = officeComplexCount;
+
+      document.getElementById("marketingDepartmentCost").textContent = formatShortNumber(marketingDepartmentCost);
+      document.getElementById("marketingDepartmentCount").textContent = marketingDepartmentCount;
+
+      document.getElementById("customerSupportCost").textContent = formatShortNumber(customerSupportCost);
+      document.getElementById("customerSupportCount").textContent = customerSupportCount;
+
+      document.getElementById("betterMouseCost").textContent = formatShortNumber(betterMouseCost);
+      document.getElementById("betterMouseCount").textContent = betterMouseCount;
+
+      document.getElementById("goldenMouseCost").textContent = formatShortNumber(goldenMouseCost);
+      document.getElementById("goldenMouseCount").textContent = goldenMouseCount;
+
+      document.getElementById("turboClickCost").textContent =
+        turboClickLevel >= maxTurboClickLevel ? "MAX" : formatShortNumber(turboClickCost);
+
+      document.getElementById("turboClickLevel").textContent = turboClickLevel;
+
+      document.getElementById("workstationBoostCost").textContent = formatShortNumber(workstationBoostCost);
+      document.getElementById("workstationBoostStatus").textContent =
+        workstationBoostBought ? t("bought") : t("notBought");
+
+      document.getElementById("workerCost").textContent =
+        workerLevel >= maxWorkerLevel ? "MAX" : formatShortNumber(workerCost);
+      document.getElementById("workerLevel").textContent = workerLevel;
+      document.getElementById("workerClicksPerSecond").textContent = getWorkerClicksPerSecond().toFixed(1);
+
+      document.getElementById("fastHandsCost").textContent =
+        fastHandsBought ? "MAX" : formatShortNumber(fastHandsCost);
+      document.getElementById("fastHandsStatus").textContent =
+        fastHandsBought ? t("bought") : t("notBought");
+
+      document.getElementById("buyComputer").disabled =
+        money < computerCost || computerCount >= maxUpgradeCount;
+
+      document.getElementById("buyWorkstation").disabled =
+        money < workstationCost || workstationCount >= maxUpgradeCount;
+
+      document.getElementById("buyServerRack").disabled =
+        money < serverRackCost || serverRackCount >= maxUpgradeCount;
+
+      document.getElementById("buyOfficeComplex").disabled =
+        money < officeComplexCost || officeComplexCount >= maxUpgradeCount;
+
+      document.getElementById("buyMarketingDepartment").disabled =
+        money < marketingDepartmentCost || marketingDepartmentCount >= maxUpgradeCount;
+
+      document.getElementById("buyCustomerSupport").disabled =
+        money < customerSupportCost || customerSupportCount >= maxUpgradeCount;
+
+      document.getElementById("buyBetterMouse").disabled =
+        money < betterMouseCost || betterMouseCount >= maxUpgradeCount;
+
+      document.getElementById("buyGoldenMouse").disabled =
+        money < goldenMouseCost || goldenMouseCount >= maxUpgradeCount;
+
+      document.getElementById("buyTurboClick").disabled =
+        money < turboClickCost || turboClickLevel >= maxTurboClickLevel;
+
+      document.getElementById("buyWorkstationBoost").disabled =
+        money < workstationBoostCost || workstationBoostBought;
+
+      document.getElementById("buyWorker").disabled =
+        money < workerCost || workerLevel >= maxWorkerLevel;
+
+      document.getElementById("buyFastHands").disabled =
+        money < fastHandsCost || fastHandsBought;
+
+      document.getElementById("workstationSection").classList.toggle("hidden", computerCount < 1);
+      document.getElementById("serverRackSection").classList.toggle("hidden", workstationCount < 1);
+      document.getElementById("officeComplexSection").classList.toggle("hidden", serverRackCount < 1);
+      document.getElementById("marketingDepartmentSection").classList.toggle("hidden", officeComplexCount < 1);
+      document.getElementById("customerSupportSection").classList.toggle("hidden", marketingDepartmentCount < 1);
+
+      updateTabs();
+      updateWorkArea();
+      reorderMaxedUpgrades();
+      updateSkillDisplays();
+    }
+
+    function getUpgradeDomPair(buttonId) {
+      const button = document.getElementById(buttonId);
+      if (!button) {
+        return [];
+      }
+
+      const card = button.closest(".tooltip.item-card");
+      if (!card) {
+        return [];
+      }
+
+      const statusLine = card.nextElementSibling;
+      return statusLine ? [card, statusLine] : [card];
+    }
+
+    function appendUpgradeDomPair(container, nodes) {
+      nodes.forEach((node) => container.appendChild(node));
+    }
+
+    function getUpgradePlaceholderPairs(container) {
+      return Array.from(container.querySelectorAll(":scope > .coming-soon-card")).map((card) => {
+        const statusLine = card.nextElementSibling;
+        return statusLine ? [card, statusLine] : [card];
+      });
+    }
+
+    let lastUpgradeSortSignature = "";
+
+    function reorderMaxedUpgrades() {
+      const upgradesTab = document.getElementById("upgradesTab");
+      if (!upgradesTab) {
+        return;
+      }
+
+      const upgradeGroups = [
+        { nodes: getUpgradeDomPair("buyBetterMouse"), isMaxed: () => betterMouseCount >= maxUpgradeCount },
+        { nodes: getUpgradeDomPair("buyGoldenMouse"), isMaxed: () => goldenMouseCount >= maxUpgradeCount },
+        { nodes: getUpgradeDomPair("buyTurboClick"), isMaxed: () => turboClickLevel >= maxTurboClickLevel },
+        { nodes: getUpgradeDomPair("buyWorkstationBoost"), isMaxed: () => workstationBoostBought },
+        { nodes: getUpgradeDomPair("buyWorker"), isMaxed: () => workerLevel >= maxWorkerLevel },
+        { nodes: getUpgradeDomPair("buyFastHands"), isMaxed: () => fastHandsBought }
+      ];
+
+      const activeUpgradeGroups = upgradeGroups.filter((group) => group.nodes.length > 0);
+      const sortSignature = activeUpgradeGroups.map((group) => group.isMaxed() ? "1" : "0").join("");
+
+      activeUpgradeGroups.forEach((group) => {
+        const card = group.nodes[0];
+        if (card) {
+          card.classList.toggle("maxed-upgrade-card", group.isMaxed());
+        }
+      });
+
+      if (sortSignature === lastUpgradeSortSignature) {
+        return;
+      }
+
+      lastUpgradeSortSignature = sortSignature;
+
+      const placeholderPairs = getUpgradePlaceholderPairs(upgradesTab);
+      const openUpgradeGroups = activeUpgradeGroups.filter((group) => !group.isMaxed());
+      const maxedUpgradeGroups = activeUpgradeGroups.filter((group) => group.isMaxed());
+
+      openUpgradeGroups.forEach((group) => appendUpgradeDomPair(upgradesTab, group.nodes));
+      placeholderPairs.forEach((nodes) => appendUpgradeDomPair(upgradesTab, nodes));
+      maxedUpgradeGroups.forEach((group) => appendUpgradeDomPair(upgradesTab, group.nodes));
+    }
+
+    function updateSkillTreeModeUI() {
+      const modeText = document.getElementById("skillTreeModeText");
+      const startButton = document.getElementById("startRunButton");
+      const closeButton = document.getElementById("closeSkillTreeButton");
+
+      if (!modeText || !startButton || !closeButton) {
+        return;
+      }
+
+      if (skillTreeMode === "rebirth") {
+        modeText.textContent = t("skilltreeRebirthMode");
+        startButton.style.display = "block";
+        closeButton.disabled = true;
+        closeButton.textContent = t("closeAfterStart");
+      } else {
+        modeText.textContent = t("skilltreeViewMode");
+        startButton.style.display = "none";
+        closeButton.disabled = false;
+        closeButton.textContent = t("close");
+      }
+    }
+
+    function resetRunProgressForRebirth() {
+      money = 0;
+      highestChipMilestoneClaimed = 0;
+
+      computerCount = 0;
+      computerCost = 100;
+
+      workstationCount = 0;
+      workstationCost = 2500;
+
+      serverRackCount = 0;
+      serverRackCost = 50000;
+
+      officeComplexCount = 0;
+      officeComplexCost = 500000;
+
+      marketingDepartmentCount = 0;
+      marketingDepartmentCost = 10000000;
+
+      customerSupportCount = 0;
+      customerSupportCost = 150000000;
+
+      betterMouseCount = 0;
+      betterMouseCost = 25;
+
+      goldenMouseCount = 0;
+      goldenMouseCost = 200;
+
+      turboClickLevel = 0;
+      turboClickCost = 500;
+
+      workstationBoostBought = false;
+      workstationBoostCost = 10000;
+
+      workerLevel = 0;
+      workerCost = 1000000;
+      workerClickProgress = 0;
+
+      fastHandsBought = false;
+      fastHandsCost = 50000000;
+
+      clickCounter = 0;
+      activeTab = "research";
+      currentWorkAsset = null;
+      currentWorkUsesLargeImage = false;
+      document.getElementById("testToggle").checked = false;
+    }
+
+    function applyCompanyStarterRunBonus() {
+      if (companyStarterSkillLevel >= 1) {
+        computerCount = Math.max(computerCount, 1);
+        computerCost = Math.max(computerCost, 100 * Math.pow(priceMultiplier, computerCount));
+      }
+
+      if (companyStarterSkillLevel >= 2) {
+        workstationCount = Math.max(workstationCount, 1);
+        workstationCost = Math.max(workstationCost, 2500 * Math.pow(priceMultiplier, workstationCount));
+      }
+
+      if (companyStarterSkillLevel >= 3) {
+        serverRackCount = Math.max(serverRackCount, 1);
+        serverRackCost = Math.max(serverRackCost, 50000 * Math.pow(priceMultiplier, serverRackCount));
+      }
+
+      if (companyStarterSkillLevel >= 4) {
+        officeComplexCount = Math.max(officeComplexCount, 1);
+        officeComplexCost = Math.max(officeComplexCost, 500000 * Math.pow(priceMultiplier, officeComplexCount));
+      }
+
+      if (companyStarterSkillLevel >= 5) {
+        marketingDepartmentCount = Math.max(marketingDepartmentCount, 1);
+        marketingDepartmentCost = Math.max(marketingDepartmentCost, 10000000 * Math.pow(priceMultiplier, marketingDepartmentCount));
+      }
+    }
+
+    function applyStartCapitalRunBonus() {
+      money = Math.max(money, getStartCapitalAmount());
+    }
+
+    function canSpendSkillPoints() {
+      return skillTreeMode === "rebirth";
+    }
+
+    function processSingleWorkClick(clickSource = "manual") {
+      const isWorkerClick = clickSource === "worker";
+      const baseClickMoney = isWorkerClick ? getWorkerClickValue() : getManualClickValue();
+      const fastHandsBonus = getFastHandsClickBonus();
+      let earnedMoney = baseClickMoney + fastHandsBonus;
+      let message = "";
+
+      if (didTurboClickTrigger()) {
+        earnedMoney += baseClickMoney;
+        message += t("turboClickMsg");
+      }
+
+      clickCounter++;
+
+      if (clickCounter % 10 === 0) {
+        const bonus = getGoldenMouseBonus();
+        earnedMoney += bonus;
+
+        if (bonus > 0) {
+          message += t("goldenMouseMsg", { value: formatShortNumber(bonus) });
+        }
+      }
+
+      return { earnedMoney, message };
+    }
+
+    function applyWorkClickBatch(clickAmount, event = null, showPopup = true, clickSource = "manual") {
+      let totalEarned = 0;
+      let combinedMessage = "";
+
+      for (let index = 0; index < clickAmount; index++) {
+        const clickResult = processSingleWorkClick(clickSource);
+        totalEarned += clickResult.earnedMoney;
+        combinedMessage += clickResult.message;
+      }
+
+      if (totalEarned <= 0) {
+        return 0;
+      }
+
+      money += totalEarned;
+
+      if (showPopup) {
+        showClickIncomePopup(totalEarned, event);
+      }
+
+      if (combinedMessage !== "") {
+        showBonusMessage(combinedMessage);
+      }
+
+      return totalEarned;
+    }
+
+    function processWorkerAutoClicks() {
+      const workerClicksPerSecond = getWorkerClicksPerSecond();
+
+      if (workerClicksPerSecond <= 0) {
+        workerClickProgress = 0;
+        return;
+      }
+
+      workerClickProgress += workerClicksPerSecond;
+      const completedClicks = Math.floor(workerClickProgress);
+      workerClickProgress -= completedClicks;
+
+      if (completedClicks > 0) {
+        applyWorkClickBatch(completedClicks, null, true, "worker");
+      }
+    }
+
+    document.getElementById("workArea").onclick = (event) => {
+      applyWorkClickBatch(1, event, true);
+      update();
+    };
+
+    document.getElementById("buyComputer").onclick = () => {
+      if (money >= computerCost && computerCount < maxUpgradeCount) {
+        money -= computerCost;
+        computerCount++;
+        computerCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyWorkstation").onclick = () => {
+      if (money >= workstationCost && workstationCount < maxUpgradeCount) {
+        money -= workstationCost;
+        workstationCount++;
+        workstationCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyServerRack").onclick = () => {
+      if (money >= serverRackCost && serverRackCount < maxUpgradeCount) {
+        money -= serverRackCost;
+        serverRackCount++;
+        serverRackCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyOfficeComplex").onclick = () => {
+      if (money >= officeComplexCost && officeComplexCount < maxUpgradeCount) {
+        money -= officeComplexCost;
+        officeComplexCount++;
+        officeComplexCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyMarketingDepartment").onclick = () => {
+      if (money >= marketingDepartmentCost && marketingDepartmentCount < maxUpgradeCount) {
+        money -= marketingDepartmentCost;
+        marketingDepartmentCount++;
+        marketingDepartmentCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyCustomerSupport").onclick = () => {
+      if (money >= customerSupportCost && customerSupportCount < maxUpgradeCount) {
+        money -= customerSupportCost;
+        customerSupportCount++;
+        customerSupportCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyBetterMouse").onclick = () => {
+      if (money >= betterMouseCost && betterMouseCount < maxUpgradeCount) {
+        money -= betterMouseCost;
+        betterMouseCount++;
+        betterMouseCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyGoldenMouse").onclick = () => {
+      if (money >= goldenMouseCost && goldenMouseCount < maxUpgradeCount) {
+        money -= goldenMouseCost;
+        goldenMouseCount++;
+        goldenMouseCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyTurboClick").onclick = () => {
+      if (money >= turboClickCost && turboClickLevel < maxTurboClickLevel) {
+        money -= turboClickCost;
+        turboClickLevel++;
+        turboClickCost *= turboClickPriceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyWorkstationBoost").onclick = () => {
+      if (money >= workstationBoostCost && !workstationBoostBought) {
+        money -= workstationBoostCost;
+        workstationBoostBought = true;
+        update();
+      }
+    };
+
+    document.getElementById("buyWorker").onclick = () => {
+      if (money >= workerCost && workerLevel < maxWorkerLevel) {
+        money -= workerCost;
+        workerLevel++;
+        workerCost *= priceMultiplier;
+        update();
+      }
+    };
+
+    document.getElementById("buyFastHands").onclick = () => {
+      if (money >= fastHandsCost && !fastHandsBought) {
+        money -= fastHandsCost;
+        fastHandsBought = true;
+        update();
+      }
+    };
+
+    document.getElementById("overclockSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      if (chips >= 1 && !overclockBought) {
+        chips -= 1;
+        overclockBought = true;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("companyStarterSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getCompanyStarterSkillCost();
+      if (overclockBought && chips >= cost && companyStarterSkillLevel < maxCompanyStarterSkillLevel) {
+        chips -= cost;
+        companyStarterSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("startCapitalSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getStartCapitalSkillCost();
+      if (overclockBought && chips >= cost && startCapitalSkillLevel < maxStartCapitalSkillLevel) {
+        chips -= cost;
+        startCapitalSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("clickSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getClickSkillCost();
+      if (overclockBought && chips >= cost && clickSkillLevel < maxSkillLevel) {
+        chips -= cost;
+        clickSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("workerAutomationSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getWorkerAutomationSkillCost();
+      if (overclockBought && clickSkillLevel > 0 && chips >= cost && workerAutomationSkillLevel < maxWorkerAutomationSkillLevel) {
+        chips -= cost;
+        workerAutomationSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("passiveSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getPassiveSkillCost();
+      if (overclockBought && chips >= cost && passiveSkillLevel < maxSkillLevel) {
+        chips -= cost;
+        passiveSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("scaleEffectsSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getScaleEffectsSkillCost();
+      if (overclockBought && passiveSkillLevel > 0 && chips >= cost && scaleEffectsSkillLevel < maxScaleEffectsSkillLevel) {
+        chips -= cost;
+        scaleEffectsSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("chipSkill").onclick = () => {
+      if (!canSpendSkillPoints()) {
+        return;
+      }
+
+      const cost = getChipSkillCost();
+      if (overclockBought && chips >= cost && chipSkillLevel < maxSkillLevel) {
+        chips -= cost;
+        chipSkillLevel++;
+        saveGame();
+        update();
+      }
+    };
+
+    document.getElementById("upgradesTabButton").onclick = () => {
+      activeTab = "upgrades";
+      update();
+    };
+
+    document.getElementById("researchTabButton").onclick = () => {
+      activeTab = "research";
+      update();
+    };
+
+    document.getElementById("openFoundationTabButton").onclick = () => {
+      activeShopTab = "foundation";
+      update();
+    };
+
+    document.getElementById("openShopTabButton").onclick = () => {
+      activeShopTab = "shop";
+      update();
+    };
+
+    document.getElementById("openSkillTreeButton").onclick = () => {
+      if (!rebirthPending) {
+        skillTreeMode = "view";
+      }
+      document.getElementById("skillTreeOverlay").classList.add("open");
+      updateSkillTreeModeUI();
+      resetSkillTreeView();
+    };
+
+    document.getElementById("closeSkillTreeButton").onclick = () => {
+      if (rebirthPending) {
+        return;
+      }
+
+      skillTreeMode = "view";
+      document.getElementById("skillTreeOverlay").classList.remove("open");
+      updateSkillTreeModeUI();
+    };
+
+    document.getElementById("rebirthButton").onclick = async () => {
+      const confirmed = await showConfirmDialog(t("confirmRebirth"));
+
+      if (!confirmed) {
+        return;
+      }
+
+      resetRunProgressForRebirth();
+      skillTreeMode = "rebirth";
+      rebirthPending = true;
+
+      document.getElementById("skillTreeOverlay").classList.add("open");
+      resetSkillTreeView();
+      saveGame();
+      update();
+    };
+
+    document.getElementById("startRunButton").onclick = () => {
+      applyCompanyStarterRunBonus();
+      applyStartCapitalRunBonus();
+      rebirthPending = false;
+      skillTreeMode = "view";
+      activeTab = "upgrades";
+
+      document.getElementById("skillTreeOverlay").classList.remove("open");
+      saveGame();
+      update();
+    };
+
+    document.getElementById("testToggle").onchange = (e) => {
+      if (e.target.checked) {
+        money = testMoney;
+        chips = testChips;
+      }
+      update();
+    };
+
+
+    function setupAssetFallbacks() {
+      document.querySelectorAll(".asset-icon-slot, .skill-asset-slot").forEach((slot) => {
+        const img = slot.querySelector(".asset-img");
+        const placeholder = slot.querySelector(".asset-placeholder");
+
+        if (!img || !placeholder) {
+          return;
+        }
+
+        img.onload = () => {
+          img.style.display = "block";
+          placeholder.style.display = "none";
+        };
+
+        img.onerror = () => {
+          img.style.display = "none";
+          placeholder.style.display = "inline";
+        };
+
+        if (img.complete && img.naturalWidth > 0) {
+          img.style.display = "block";
+          placeholder.style.display = "none";
+        }
+      });
+    }
+
+
+    function openMainMenu() {
+      mainMenuOpen = true;
+      pauseMenuOpen = false;
+
+      document.body.classList.add("main-menu-scene");
+
+      document.getElementById("mainMenuOverlay").classList.remove("hidden");
+      document.getElementById("pauseMenuOverlay").classList.add("hidden");
+      document.getElementById("skillTreeOverlay").classList.remove("open");
+
+      document.getElementById("settingsBox").classList.remove("open");
+      document.getElementById("achievementsBox").classList.remove("open");
+      document.getElementById("pauseSettingsOverlay").classList.add("hidden");
+      document.getElementById("pauseAchievementsBox").classList.remove("open");
+      document.getElementById("confirmDialogOverlay").classList.add("hidden");
+    }
+
+    function closeMainMenu() {
+      mainMenuOpen = false;
+
+      document.body.classList.remove("main-menu-scene");
+
+      document.getElementById("mainMenuOverlay").classList.add("hidden");
+      document.getElementById("settingsBox").classList.remove("open");
+      document.getElementById("achievementsBox").classList.remove("open");
+    }
+
+    function openPauseMenu() {
+      if (mainMenuOpen) {
+        return;
+      }
+
+      pauseMenuOpen = true;
+      document.getElementById("pauseMenuOverlay").classList.remove("hidden");
+      document.getElementById("pauseSettingsOverlay").classList.add("hidden");
+      document.getElementById("pauseAchievementsBox").classList.remove("open");
+    }
+
+    function closePauseMenu() {
+      pauseMenuOpen = false;
+      document.getElementById("pauseMenuOverlay").classList.add("hidden");
+      document.getElementById("pauseSettingsOverlay").classList.add("hidden");
+      document.getElementById("pauseAchievementsBox").classList.remove("open");
+    }
+
+    function toggleSettingsBox() {
+      const settingsBox = document.getElementById("settingsBox");
+      const achievementsBox = document.getElementById("achievementsBox");
+
+      achievementsBox.classList.remove("open");
+      settingsBox.classList.toggle("open");
+    }
+
+    function toggleAchievementsBox() {
+      const settingsBox = document.getElementById("settingsBox");
+      const achievementsBox = document.getElementById("achievementsBox");
+
+      settingsBox.classList.remove("open");
+      achievementsBox.classList.toggle("open");
+    }
+
+    function openPauseSettingsMenu() {
+      document.getElementById("pauseMenuOverlay").classList.add("hidden");
+      document.getElementById("pauseSettingsOverlay").classList.remove("hidden");
+      document.getElementById("pauseAchievementsBox").classList.remove("open");
+    }
+
+    function closePauseSettingsMenu() {
+      document.getElementById("pauseSettingsOverlay").classList.add("hidden");
+      document.getElementById("pauseMenuOverlay").classList.remove("hidden");
+    }
+
+    function togglePauseAchievementsBox() {
+      const achievementsBox = document.getElementById("pauseAchievementsBox");
+      achievementsBox.classList.toggle("open");
+    }
+
+    document.getElementById("playButton").onclick = () => {
+      closeMainMenu();
+    };
+
+    document.getElementById("settingsButton").onclick = () => {
+      toggleSettingsBox();
+    };
+
+    document.getElementById("achievementsButton").onclick = () => {
+      toggleAchievementsBox();
+    };
+
+    document.getElementById("resumeButton").onclick = () => {
+      closePauseMenu();
+    };
+
+    document.getElementById("pauseSettingsButton").onclick = () => {
+      openPauseSettingsMenu();
+    };
+
+    document.getElementById("settingsBackButton").onclick = () => {
+      closePauseSettingsMenu();
+    };
+
+    document.getElementById("pauseDeleteSaveButton").onclick = async () => {
+      const confirmed = await showConfirmDialog(t("confirmDeleteSave"));
+
+      if (confirmed) {
+        deleteSave();
+        closePauseSettingsMenu();
+        closePauseMenu();
+        openMainMenu();
+      }
+    };
+
+    document.getElementById("pauseAchievementsButton").onclick = () => {
+      togglePauseAchievementsBox();
+    };
+
+    document.getElementById("pauseBackToMainMenuButton").onclick = () => {
+      saveGame();
+      openMainMenu();
+    };
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      if (!document.getElementById("confirmDialogOverlay").classList.contains("hidden")) {
+        return;
+      }
+
+      if (mainMenuOpen) {
+        return;
+      }
+
+      if (!document.getElementById("pauseSettingsOverlay").classList.contains("hidden")) {
+        closePauseSettingsMenu();
+        return;
+      }
+
+      if (pauseMenuOpen) {
+        closePauseMenu();
+      } else {
+        openPauseMenu();
+      }
+    });
+
+
+    let skillTreeScale = 1;
+    let skillTreePanX = 0;
+    let skillTreePanY = 0;
+    let skillTreeDragging = false;
+    let skillTreeWasDragging = false;
+    let skillTreeDragStartX = 0;
+    let skillTreeDragStartY = 0;
+    let skillTreeLastX = 0;
+    let skillTreeLastY = 0;
+
+    function applySkillTreeTransform() {
+      const viewport = document.getElementById("skillTreeViewport");
+      const canvas = document.getElementById("skillTreeCanvas");
+
+      if (!viewport || !canvas) {
+        return;
+      }
+
+      const baseX = viewport.clientWidth / 2 - 500;
+      const baseY = viewport.clientHeight / 2 - 450;
+
+      canvas.style.transform =
+        "translate(" + (baseX + skillTreePanX) + "px, " + (baseY + skillTreePanY) + "px) scale(" + skillTreeScale + ")";
+    }
+
+    function resetSkillTreeView() {
+      skillTreeScale = 1;
+      skillTreePanX = 0;
+      skillTreePanY = 0;
+      applySkillTreeTransform();
+    }
+
+    function setupSkillTreeControls() {
+      const viewport = document.getElementById("skillTreeViewport");
+
+      if (!viewport) {
+        return;
+      }
+
+      applySkillTreeTransform();
+
+      viewport.addEventListener("wheel", (event) => {
+        event.preventDefault();
+
+        const oldScale = skillTreeScale;
+        const rect = viewport.getBoundingClientRect();
+
+        const baseX = viewport.clientWidth / 2 - 500;
+        const baseY = viewport.clientHeight / 2 - 450;
+
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        const worldX = (mouseX - baseX - skillTreePanX) / oldScale;
+        const worldY = (mouseY - baseY - skillTreePanY) / oldScale;
+
+        const zoomFactor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+        skillTreeScale = Math.min(1.8, Math.max(0.55, oldScale * zoomFactor));
+
+        skillTreePanX = mouseX - baseX - worldX * skillTreeScale;
+        skillTreePanY = mouseY - baseY - worldY * skillTreeScale;
+
+        applySkillTreeTransform();
+      }, { passive: false });
+
+      viewport.addEventListener("mousedown", (event) => {
+        if (event.button !== 0) {
+          return;
+        }
+
+        skillTreeDragging = true;
+        skillTreeWasDragging = false;
+        skillTreeDragStartX = event.clientX;
+        skillTreeDragStartY = event.clientY;
+        skillTreeLastX = event.clientX;
+        skillTreeLastY = event.clientY;
+        viewport.classList.add("dragging");
+      });
+
+      window.addEventListener("mousemove", (event) => {
+        if (!skillTreeDragging) {
+          return;
+        }
+
+        const dx = event.clientX - skillTreeLastX;
+        const dy = event.clientY - skillTreeLastY;
+
+        if (Math.abs(event.clientX - skillTreeDragStartX) > 5 || Math.abs(event.clientY - skillTreeDragStartY) > 5) {
+          skillTreeWasDragging = true;
+        }
+
+        skillTreePanX += dx;
+        skillTreePanY += dy;
+        skillTreeLastX = event.clientX;
+        skillTreeLastY = event.clientY;
+
+        applySkillTreeTransform();
+      });
+
+      window.addEventListener("mouseup", () => {
+        if (!skillTreeDragging) {
+          return;
+        }
+
+        skillTreeDragging = false;
+        viewport.classList.remove("dragging");
+
+        setTimeout(() => {
+          skillTreeWasDragging = false;
+        }, 0);
+      });
+
+      viewport.addEventListener("click", (event) => {
+        if (skillTreeWasDragging) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+
+      window.addEventListener("resize", () => {
+        applySkillTreeTransform();
+      });
+    }
+
+
+
+
+    // =========================
+    // TEXTAUSWAHL / DRAG-SCHUTZ
+    // =========================
+    document.addEventListener("selectstart", (event) => {
+      const editableElements = ["INPUT", "TEXTAREA"];
+
+      if (!editableElements.includes(event.target.tagName)) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener("dragstart", (event) => {
+      event.preventDefault();
+    });
+
+
+    document.querySelectorAll("[data-language-button]").forEach((button) => {
+      button.onclick = () => {
+        setLanguage(button.getAttribute("data-language-button"));
+      };
+    });
+
+    setInterval(() => {
+      money += getIncome();
+      processWorkerAutoClicks();
+      rollGigachipDrop();
+      update();
+    }, 1000);
+
+    setInterval(() => {
+      saveGame();
+    }, 5000);
+
+    loadGame();
+    update();
+    setupAssetFallbacks();
+    setupSkillTreeControls();
+    applyLanguage();
+    openMainMenu();
+
+    if (rebirthPending && !mainMenuOpen) {
+      document.getElementById("skillTreeOverlay").classList.add("open");
+      updateSkillTreeModeUI();
+      resetSkillTreeView();
+    }
+  </script>
+</body>
+</html>
